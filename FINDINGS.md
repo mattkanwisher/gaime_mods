@@ -122,24 +122,69 @@ ROM data is passed in via `Sys22Plugin_SetRom` from the C# layer, so it lives as
 asset inside `assets/bin/Data/data.unity3d` (39 MB) rather than as loose MAME set files.
 Audio goes through a separate `libaudioplugin_Quattro.so`.
 
-## 6. The gun (answered on paper, not yet on hardware)
+## 6. The gun — verified on hardware
 
-From `GaimeService`:
+Confirmed against the physical gun on macOS. `tools/gun_probe.py` does the enumeration,
+reading and command sending.
 
-- **USB IDs: VID `0x2E2C` (11820), PID `0x0631` (1585).**
-- Android matches it with `supportsSource(SOURCE_STYLUS)` — the gun's HID descriptor
-  declares a **digitizer/pen, i.e. an absolute pointer**. That is exactly why it works as a
-  no-calibration absolute mouse when plugged straight into a PC.
-- Composite device. Interface 0 is the HID pointer consumed by the normal Android input
-  stack. **Interface 1** is a vendor interface the service claims explicitly
-  (`claimSpecificInterface(1)`) for configuration, using interrupt IN/OUT endpoints and
-  64-byte reports.
+```
+GAIME v1 — Tassei Denki Co.,Ltd — VID 0x2E2C  PID 0x0631
+bcdDevice 0x0419, serial 9165, USB 2.0 full/high speed, 500 mA
+bDeviceClass 0xEF / sub 2 / proto 1  (composite, interface association)
+```
 
-**All computer vision runs in the gun.** The console has no camera hardware at all, and the
-gun reports derived points while receiving calibration coefficients back. This means the
-console is optional for pointing — Tier 2 does not depend on Tier 3.
+Five interfaces:
 
-### Interface 1 wire format
+| # | Class | What it is | Endpoints |
+|---|---|---|---|
+| 0 | HID | Boot keyboard, 8-byte reports | 2 |
+| 1 | HID | **Digitizer / touch screen — the pointer** | 2 |
+| 2 | HID | Vendor page 0xFF00, 64-byte in/out — config | 2 |
+| 3 | Video | UVC VideoControl | 1 |
+| 4 | Video | UVC VideoStreaming | 0 (alt 0) |
+
+**Correction to an earlier reading of the firmware:** the config interface is **2**, not 1 —
+`GaimeService` builds its write device with `factory(…, 2, …)`. The `claimSpecificInterface(1)`
+call does something different and more interesting: it claims the *digitizer* interface with
+`force = true`, detaching it from the Android input stack for the duration of a calibration
+transfer, then releases it. That is presumably to stop the pointer jumping while coefficients
+are being pushed, and it is a strong hint about the reported trigger jitter.
+
+### Interface 1 — the pointer (report descriptor decoded)
+
+```
+Usage Page (Digitizer) / Usage (Touch Screen), Report ID 1
+  Tip Switch    1 bit    <- trigger
+  In Range      1 bit    <- gun has screen lock
+  padding       6 bits
+  X, Y          16 bits each, Logical/Physical 0..10000, Input(Data,Var,Abs)
+```
+
+So a 6-byte report: `01 <flags> <X lo> <X hi> <Y lo> <Y hi>`. **X and Y are absolute** over a
+normalised 0–10000 space — exactly what light gun use requires, and why it works as a
+no-calibration absolute pointer on a bare PC. The `In Range` bit is a free "do I see the
+screen" signal that a `uinput` bridge can gate on.
+
+**All computer vision runs in the gun.** The console has no camera hardware at all (§1), and
+the gun reports derived coordinates while receiving calibration coefficients back. The
+console is therefore optional for pointing — Tier 2 does not depend on Tier 3.
+
+### The gun also exposes its camera over standard UVC
+
+Interfaces 3 and 4 present the gun's own camera to any host as **"Dashine UVC"**
+(`UVC Camera VendorID_11820 ProductID_1585`). Supported modes:
+
+```
+320x240   @ 30 / 20 / 15 fps      1280x720  @ 10 / 5 / 2 fps
+640x360   @ 30 / 20 / 15 fps      1920x1080 @ 5 / 2 fps
+pixel formats: uyvy422, yuyv422, nv12, 0rgb, bgr0
+```
+
+The 30 fps modes are almost certainly what the tracking runs on. This means the gun's view
+can be inspected directly, which is the cheapest possible way to understand the CV — see §7
+for the permission blocker currently in the way.
+
+### Interface 2 wire format
 
 64-byte reports. The methods are named `encrypt*` but there is no encryption — it is
 framing plus a **Modbus CRC-16** (little-endian) over the leading N bytes.
@@ -167,24 +212,73 @@ last 2     Modbus CRC-16, LE
 `ReadBufferFromDevice`, `setFrameColorMode` (the v4.0.3 black/white/pink assist bars),
 `setGunMode`, `setSwitchGun`, and per-player difficulty and flash-intensity settings.
 
+### Protocol confirmed against the real gun
+
+The decoded format was validated end to end, with **no console involved**:
+
+```
+$ python3 tools/gun_probe.py gunmode 0
+hid_write returned 65  error='Success'
+packet: 05 01 05 00 00 00 00 83 d1 …
+reply:  05 01 05 00 00 00 01 42 11 …
+```
+
+The gun accepts the command and returns a well-formed 64-byte ack: same function code (5),
+same sub-function (5), byte 6 = `0x01`, and a **valid Modbus CRC-16** (`0x1142`, verified
+independently). The ack is identical for mode 0 and mode 1, so byte 6 reads as a success flag
+rather than a mode echo. Sending single-shot mode was the last write, which is the default.
+
+**A host can talk to this gun directly over interface 2, today, with no vendor software.**
+
+## 7. What is still blocked, and why
+
+**Camera capture is blocked by macOS privacy permission, not by the gun.** `ffmpeg` negotiates
+a format on "Dashine UVC" successfully and then stalls forever with zero frames. The built-in
+FaceTime camera behaves identically from this shell, which rules out the gun as the cause — the
+process running these commands has not been granted Camera access.
+
+To unblock: grant Camera permission to the terminal/app hosting this session under
+**System Settings → Privacy & Security → Camera**, then re-run:
+
+```bash
+ffmpeg -f avfoundation -video_size 640x360 -framerate 30 -i "0" -frames:v 12 work/cam/frame_%02d.png
+```
+
+**HID input reports also read as empty.** All three interfaces open successfully and writes
+work, but `hid_read_timeout` returns nothing on the digitizer, keyboard, or vendor interface
+(outside of command replies). Two candidate explanations, not yet separated:
+
+1. macOS has claimed the digitizer as a system pointing device and will not deliver duplicate
+   input reports without **Input Monitoring** permission — the same class of problem as the
+   camera.
+2. The gun genuinely does not stream pointer reports until it has screen lock, i.e. the
+   `In Range` bit is false because it is not aimed at a lit display.
+
+The write path succeeding on the same interface makes (1) the more likely explanation for the
+vendor interface at least.
+
 ---
 
 ## Open questions remaining
 
-- Trigger-pull jitter: not characterised — needs the gun on a host.
-- The exact HID report descriptor for interface 0 (field ranges, button map) — needs the gun.
-- Whether interface 1 config (gun mode, calibration) can be driven from a Linux/macOS host
-  as-is. The protocol is now known, so this is a small experiment rather than research.
-- What the MD5 handshake covers, and whether it gates pointing or only game entitlement.
+- Trigger-pull jitter: still not characterised. Needs input reports flowing, i.e. the
+  permission question in §7 resolved.
+- Whether the gun streams pointer reports without screen lock.
+- What the MD5 handshake (sub-function 7) covers, and whether it gates pointing or only game
+  entitlement.
+- Whether calibration coefficients can be pushed from a non-Android host — the framing is
+  known and writes work, so this is now a small experiment.
 - Where exactly inside `data.unity3d` the System 22 ROM data sits.
 
 ## Next actions
 
-1. **Plug the gun into this Mac.** Everything in Tier 2 is blocked on that and nothing else.
-   Capture the HID report descriptor, confirm absolute vs relative axes, then log coordinate
-   streams around trigger events to quantify the jitter.
-2. Write a `hidapi` client for interface 1 using the format in §6 — gun mode and frame
-   colour are the cheapest things to verify.
+1. Grant Camera (and likely Input Monitoring) permission, then capture the gun's own view.
+   Its camera is a plain UVC device, so this is the cheapest route into understanding the CV:
+   point it at a TV and look at what the tracker sees, including with the v4.0.3 assist bars
+   on and off.
+2. With input reports flowing, log coordinate streams around trigger events to quantify the
+   jitter, then build the `uinput`/Raw Input bridge that latches the last stable coordinate.
+   Gate it on the `In Range` bit.
 3. Flashing an Ultimate image onto a Basic console is now trivially possible and reversible
-   (all three images are public and decryptable). The authentication gate on first launch is
-   the thing to actually test.
+   (all three images are public and decryptable). The first-launch accessory check is the
+   thing to actually test.
