@@ -977,3 +977,30 @@ the FPC itself is shielded and unmarked), `U5` and `U9`, and the GigaDevice part
 off the orange paint**. The `J3` silkscreen, the SoC package and the reverse of the main board are
 all now covered and need no re-shoot. The grip daughterboard `LBQ-1585-D` has not been photographed
 on either side.
+
+## 12. There is no console feedback channel over USB (dead end, recorded)
+
+Tested on hardware: `FES_GET_MSG` (0x204) **is not implemented in this U-Boot**. The FES
+handler table contains exactly these commands and no others:
+
+```
+fes_down  fes_flash_set_off  fes_flash_set_on  fes_flash_size_probe  fes_force_erase
+fes_force_erase_key  fes_memset  fes_pmu  fes_query_info  fes_query_secure
+fes_query_storage  fes_run  fes_tool_mode  fes_trans  fes_unseqmem_read
+fes_unseqmem_write  fes_up  fes_verify  fes_verify_status  fes_verify_value
+```
+
+`FES_INFO` (0x203) returns `csw_status=255` and wedges the endpoint until a replug.
+
+So **U-Boot's console output cannot be retrieved over USB** — it goes to the UART only.
+That closes the idea of using FES as a diagnostic channel, and it is why four flash patches
+produced no observable result: there was never any way to see what the device did with them.
+
+`FES_RUN` (0x202) does execute code at an address, so booting modified code from RAM
+(stub → `run_command("bootm …")`) remains possible. But it would be built and debugged with
+no output at all, verifiable only by whether the console visibly boots.
+
+**Conclusion: the debug UART (PB09 TX / PB10 RX / GND, 115200) is the only feedback channel
+this device has.** `console=ttyAS0,115200` is already in the bootargs, and `ro.debuggable=1`
+is already written to flash, so `service console /system/bin/sh` should give a root shell the
+moment a serial adapter is attached — the shell and the diagnostics in one step.
