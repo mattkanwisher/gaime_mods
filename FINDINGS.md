@@ -85,6 +85,33 @@ Partition layout is stock modern Android: 27 partitions, A/B slots, AVB
 - Vendor stack is **Allwinner PhoenixSuit** (`PhoenixPro.cfg` → `www.allwinnertech.com`,
   author `AWA1746`). The unsigned kernel driver is Allwinner's `usbdrv.sys`.
 - FEL/efex USB IDs: **VID `0x1f3a` / PID `0x1000`** (from `LiveSuit.cfg`).
+
+### FEL mode confirmed on hardware
+
+The console was observed in FEL mode as **`0x1f3a:0xefe8`** (USB full speed, 300 mA) — the
+standard Allwinner FEL device ID that `sunxi-fel` targets, *not* the `0x1000` efex PID in
+`LiveSuit.cfg`. A read-only `sunxi-fel version` returned:
+
+```
+AWUSBFEX soc=00001890(A523) 00000001 ver=0001 44 08 scratchpad=00061500
+```
+
+**`soc = 0x1890` (A523 family)** independently confirms the `sun55iw3` identification from the
+factory boot log in §1, this time from the live device. It also means the documented entry
+sequence (hold the pinhole Programming button, insert USB-C into the power port) genuinely lands
+in the SoC's ROM loader.
+
+Practical significance: FEL is a **read/write** loader reachable over plain USB with `sunxi-tools`,
+no soldering and no vendor software. It can read and write DRAM and drive the boot medium, so it is
+both the easiest way to dump the console and the easiest way to brick it. Build it with:
+
+```bash
+git clone --depth 1 https://github.com/linux-sunxi/sunxi-tools && cd sunxi-tools
+PKG_CONFIG_PATH="$(brew --prefix libusb)/lib/pkgconfig" make sunxi-fel
+```
+
+Note this is the **console**, not the gun. The gun's main IC is a ~96-pin QFN (§10) and cannot be
+an A523, which is a large BGA octa-core Cortex-A55.
 - **Loader entry sequence:** hold the pinhole *Programming* button on the console, then
   insert USB-C into the **POWER PORT** (rear power jack is USB-C data). Release after
   ~5 s. The rear jack doubling as data was the correct hypothesis.
@@ -883,10 +910,23 @@ Board outline measures roughly **90 × 45 mm** against the cutting mat.
 ### Next steps on the hardware
 
 **UART first — this is the high-value, low-risk step.** You need a **USB-to-TTL serial adapter**
-(sold as a "USB-UART bridge" or "FTDI cable") with **3.3 V logic levels**. On macOS a **CP2102** or
-**FT232RL** board is the least trouble, since Apple ships drivers for both; CH340 works on recent
-macOS but has historically needed a kext. Any of them cost a few dollars. If the board has a 5V/3V3
-jumper, **set it to 3.3 V** — 5 V logic into these pins risks the SoC.
+(sold as a "USB-UART bridge" or "FTDI cable"). CP2102, FT232RL and CH340 all work on current macOS
+without installing anything.
+
+**Check what the board actually is, not what it says.** A module silkscreened `CP2102 MODULES` was
+enumerated by macOS as **`0x1a86:0x7523` — a WCH CH340**, not Silicon Labs (which would be
+`0x10c4`). Cheap modules are frequently mismarked. It worked fine and created
+`/dev/cu.usbserial-11230` with no driver install, so the mislabelling is cosmetic — but it changes
+the logic-level question below, and it means `system_profiler SPUSBDataType` is worth a look before
+trusting the silkscreen.
+
+**Logic levels.** On these red CH340 boards the chip is usually powered from USB 5 V and its TX/RX
+idle at 5 V, whereas a CP2102 idles at 3.3 V. For **read-only** capture this does not matter at all:
+the gun drives the line and the adapter only listens, and a 3.3 V signal is comfortably above a
+5 V-tolerant input's logic-high threshold. It matters only if the adapter's TXD is ever connected to
+the gun's RX. Before doing that, measure TXD to GND while idle — ~3.3 V is fine, ~5 V needs a level
+shifter (or at minimum a series resistor and the knowledge that the pin is being over-driven). If
+the board has a 5V/3V3 jumper, set it to 3.3 V.
 
 **Two wires are enough to read**, and reading is where all the value is:
 
