@@ -7,3 +7,6 @@ backup/**/*.bin
 
 # raw camera originals carry GPS EXIF — keep them local
 docs/photos/IMG_*.jpeg
+
+# APK build output
+apps/*/out/
