@@ -793,12 +793,18 @@ close-up before being treated as fact.
 are `LBQ-`**`1585`**`-C` and `-D`. So `LBQ-1585` is the internal project number for the gun, and
 the USB PID was assigned from it. Useful for searching Chinese supplier and FCC databases.
 
-### The important find: J3 is a UART header
+### The important find: J3 is a UART header — CONFIRMED
 
-Along the bottom edge of the main board, a **4-pad header `J3`** with silkscreen reading
-**`GND` / `TX` / `RX` / `V3.3`** *(confirm)*. This is the serial console predicted in §7a and is
-the cheapest route to identifying the SoC and getting a boot log — pads are exposed, labelled, and
-need no chip-level work.
+Along the bottom edge of the main board, **`J3`: four unpopulated plated through-holes,
+silkscreened `GND` / `TX` / `RX` / `V3.3` in that order.** Confirmed at high magnification
+(`docs/photos/gun-front-closeup-soc-and-j3-uart.jpg`), no longer provisional.
+
+On the **reverse** side of the same holes, the outermost pad is **square while the other three are
+round** — the standard pin-1 marker. Use it to orient, but still confirm `GND` with a continuity
+check to the USB shield or a ground plane before connecting anything.
+
+This is the serial console predicted in §7a, and after the flash finding below it is now clearly
+the *best* route in, not merely the cheapest.
 
 ### Other legible features
 
@@ -814,19 +820,65 @@ need no chip-level work.
   outside (§9), but it is evidently connectorised *internally*.
 - **`CN1`** at top left with red/black wires and **`Motor`** silkscreen beside it — the recoil
   actuator. A second small connector sits below it.
-- Large central IC in a QFN/BGA-style package, unmarked in this photo — **this is the part to
-  identify**.
-- `Y1` crystal near centre-right; inductors `L1`, `L3`, `L4`; three blue tactile switches
-  (`SW3`/`SW5` and one centre-left); LEDs `D5`, `D6`; a 2D datamatrix sticker mid-board; a dense
-  field of test points `T1`–`T36`.
+- `Y1` crystal near centre-right; inductors `L1`, `L3`, `L4`; a small regulator at `U4`; three blue
+  tactile switches (`SW2`, `SW6` and one more); LEDs `D5`, `D6`, `D10`, `D11`, `D12`; a 2D
+  datamatrix sticker mid-board; a dense field of test points `T1`–`T36`.
 
-### What is conspicuously absent
+### The SoC (`U8`) is deliberately unmarked
 
-No separate DRAM package and no obvious eMMC or SPI-NOR flash is visible on this side. Either they
-are on the reverse, or the main IC is a **system-in-package with DRAM (and possibly flash) stacked
-in-package** — common for camera and vision SoCs. Resolving this matters: an external SPI-NOR in an
-SOIC-8 could be clipped and read in minutes, whereas in-package storage makes UART or a ROM loader
-the only practical routes.
+The large central IC is a **QFN/LGA package with roughly 24 pads per side (~96 pins), and its top
+is completely blank** — no laser etch, no logo, nothing, at full magnification
+(`docs/photos/gun-front-closeup-soc-and-j3-uart.jpg`). That is a house-marked or unmarked part.
+
+**Consequence: the SoC cannot be identified from the package.** It has to come from the UART boot
+log. That single fact makes J3 the whole ballgame.
+
+### The boot flash: GigaDevice SPI NAND at `U6`
+
+An 8-pad leadless package near the camera end, marked:
+
+```
+GigaDevice
+[?]J2352
+[?]F1G[??]UEY1G      <- partly hidden under orange QC paint
+ULB400
+```
+
+`GigaDevice` is unambiguous. The `…UEY1G` suffix and the `F1G` fragment point to the
+**`GD5F1G…` family: 1 Gbit (128 MiB) SPI NAND, 1.8 V, WSON-8**. The `1.8V` rail called out
+elsewhere on the board is consistent with a 1.8 V part. `J2352` reads as a 2023-week-52 date code
+and `ULB400` as a lot code. The exact suffix is obscured — **isopropyl should lift the QC paint and
+settle it**, and that is worth doing before ordering any tooling.
+
+### Correction: this changes the flash-dump plan
+
+§7a suggested "an SPI-NOR chip in an SOIC-8 can be read in place with a clip." Both halves of that
+are now wrong for this board:
+
+- It is **NAND, not NOR**. A bare CH341A and `flashrom` will not read it — flashrom does not do
+  SPI NAND. You need tooling that speaks SPI NAND with GD5F support.
+- It is **WSON-8, not SOIC-8**. The pads are underneath the package, so **a SOIC clip cannot
+  attach**. An in-place read would mean a WSON test socket, and getting there means hot-air
+  removal.
+
+So the practical order is inverted from what §7a implied: **get UART, interrupt the bootloader or
+reach a shell, and dump the NAND in-circuit through the SoC** (`/proc/mtd`, `nanddump`, or `dd`
+from `/dev/mtdblock*`). Desoldering becomes the fallback, not the first move.
+
+### The back of the main board is essentially bare
+
+`docs/photos/gun-mainboard-back.jpg`: two tactile switches (`SW1` and one more), a handful of
+0402-class passives (`R6`, `R9`, `R21`, `R23`, `C2`, `C13`, `C39`, `C40`, `D2`), mounting holes
+`M6`–`M9`, an EMI/ground pad area behind the camera FPC connector, the reverse of `J3`, and the
+reverse of the USB connector's through-holes. **No DRAM. No second flash. No debug header beyond
+J3.**
+
+Combined with the front, that settles §7a's open question: the GigaDevice NAND is the *only*
+external memory, so the **DRAM must be stacked in-package with the unmarked SoC**. A ~1 GB SiP with
+in-package DDR and a separate 128 MiB SPI NAND for storage is a coherent, conventional design for a
+Linux-class vision part, and matches the vendor's published spec (§9).
+
+Board outline measures roughly **90 × 45 mm** against the cutting mat.
 
 ### Next steps on the hardware
 
@@ -841,7 +893,17 @@ the only practical routes.
 - Capture from a *cold* start: attach the adapter, open the terminal, then plug the gun's USB in —
   the boot log is the payload, and it should name the SoC outright.
 - Watch for a bootloader autoboot countdown that can be interrupted.
+- Once there is a shell or a bootloader prompt, dump the NAND in-circuit — that is now the cheapest
+  path to the firmware image, given the WSON-8 SPI NAND (above).
 
-Close-ups still wanted: the large central IC (angled light helps laser-etched marks), `U5`, `U9`,
-the `J3` silkscreen, the camera module's own markings, and **the entire reverse side of both
-boards**.
+### Photos
+
+Stripped, upright copies live in `docs/photos/`. **The raw camera originals carried GPS EXIF** —
+precise coordinates — and are gitignored (`docs/photos/IMG_*.jpeg`) rather than committed. Anything
+published from here should come from the stripped `.jpg` copies.
+
+Close-ups still wanted: the camera module's own markings (it sits behind the barrel assembly, and
+the FPC itself is shielded and unmarked), `U5` and `U9`, and the GigaDevice part **after cleaning
+off the orange paint**. The `J3` silkscreen, the SoC package and the reverse of the main board are
+all now covered and need no re-shoot. The grip daughterboard `LBQ-1585-D` has not been photographed
+on either side.
