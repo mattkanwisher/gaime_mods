@@ -180,9 +180,8 @@ Interfaces 3 and 4 present the gun's own camera to any host as **"Dashine UVC"**
 pixel formats: uyvy422, yuyv422, nv12, 0rgb, bgr0
 ```
 
-The 30 fps modes are almost certainly what the tracking runs on. This means the gun's view
-can be inspected directly, which is the cheapest possible way to understand the CV — see §7
-for the permission blocker currently in the way.
+The 30 fps modes are almost certainly what the tracking would run on. **But the stream does
+not carry the camera's view — see §7.**
 
 ### Interface 2 wire format
 
@@ -230,21 +229,56 @@ rather than a mode echo. Sending single-shot mode was the last write, which is t
 
 **A host can talk to this gun directly over interface 2, today, with no vendor software.**
 
-## 7. What is still blocked, and why
+## 7. The UVC stream is a test pattern, not the camera view
 
-**Camera capture is blocked by macOS privacy permission, not by the gun.** `ffmpeg` negotiates
-a format on "Dashine UVC" successfully and then stalls forever with zero frames. The built-in
-FaceTime camera behaves identically from this shell, which rules out the gun as the cause — the
-process running these commands has not been granted Camera access.
+The video feed was captured (640x360, 30 fps, 185 frames — `work/cam/gunfeed.mov`, single frame
+at `work/cam/gunfeed_frame0.png`) and it is **not imagery**. It is a synthetic scrolling gradient:
+alternating magenta and green horizontal bands with smooth grey transitions.
 
-To unblock: grant Camera permission to the terminal/app hosting this session under
-**System Settings → Privacy & Security → Camera**, then re-run:
+Measured properties:
 
-```bash
-ffmpeg -f avfoundation -video_size 640x360 -framerate 30 -i "0" -frames:v 12 work/cam/frame_%02d.png
-```
+- **Every row is perfectly uniform horizontally** — per-row standard deviation across x is
+  exactly `0.000` in all three channels. No lens or sensor can produce that.
+- R and B are almost always clipped to 0 or 255 together while G ramps linearly at
+  ~0.418/row, i.e. both chroma channels sweep together through a sawtooth.
+- The pattern **scrolls vertically at exactly +1.6 rows per frame**, perfectly linear across
+  60 frames (+8 rows at frame 5, +16 at 10, +48 at 30, +96 at 60).
+- **Zero sensor noise.** Frame 0 rolled by 8 rows is *bit-identical* to frame 5, and rolled by
+  16 rows is bit-identical to frame 10 — `max diff = 0`. A real sensor always shows read noise,
+  so the frames are generated, not captured.
 
-**HID input reports also read as empty.** All three interfaces open successfully and writes
+So the UVC bridge enumerates, negotiates a format and streams happily, but the sensor pipeline
+behind it is not in imaging mode — what comes out is a built-in ramp test pattern.
+
+**Why this is probably by design rather than a fault:** nothing in the console-side code ever
+touches video. Across `GaimeService`, `GaimeCalibration` and the launcher there are only three
+sub-function codes (5 gun mode, 6 calibration, 7 MD5 result) and no camera, UVC or video
+command of any kind. The console has no camera hardware and never consumes a video stream — the
+gun does all CV internally and reports coordinates. The UVC interfaces therefore look like a
+factory/bring-up leftover that shipped disabled.
+
+Getting real frames out, if it is possible at all, would mean finding whatever enables the
+sensor path. Two candidate routes, neither attempted:
+
+1. UVC **extension-unit** (vendor XU) controls on interface 3. `GET_INFO`/`GET_CUR` queries are
+   passive and safe to enumerate.
+2. An undocumented sub-function beyond 7 on interface 2. **Not** worth blind-scanning — an
+   unknown function code on a device whose firmware is field-flashable could hit something
+   persistent or destructive. Derive it from the gun's own firmware first.
+
+Note the gun's own firmware was never obtained. Everything in §6 came from the *console* image;
+the gun MCU's code is a separate target (Tier 4) and is where a video-enable path would live.
+
+## 8. What is still blocked, and why
+
+**`ffmpeg` cannot open any camera from this shell**, including the built-in FaceTime camera, so
+capture had to go through QuickTime Player instead (recorded to a file, then analysed offline).
+The responsible process for TCC purposes is `/Applications/Claude.app`, which does declare
+`NSCameraUsageDescription`; granting Camera to it appears to need the app restarted before a
+child process inherits the grant. Not worth chasing — the QuickTime route works and the file
+analysis is better evidence anyway.
+
+**HID input reports read as empty.** All three interfaces open successfully and writes
 work, but `hid_read_timeout` returns nothing on the digitizer, keyboard, or vendor interface
 (outside of command replies). Two candidate explanations, not yet separated:
 
@@ -261,9 +295,9 @@ vendor interface at least.
 
 ## Open questions remaining
 
-- Trigger-pull jitter: still not characterised. Needs input reports flowing, i.e. the
-  permission question in §7 resolved.
-- Whether the gun streams pointer reports without screen lock.
+- Trigger-pull jitter: still not characterised. Needs input reports flowing (§8).
+- Whether the gun streams pointer reports without screen lock, or only once `In Range` is true.
+- Whether real video can be enabled over UVC at all, and if so by what (§7).
 - What the MD5 handshake (sub-function 7) covers, and whether it gates pointing or only game
   entitlement.
 - Whether calibration coefficients can be pushed from a non-Android host — the framing is
@@ -272,13 +306,13 @@ vendor interface at least.
 
 ## Next actions
 
-1. Grant Camera (and likely Input Monitoring) permission, then capture the gun's own view.
-   Its camera is a plain UVC device, so this is the cheapest route into understanding the CV:
-   point it at a TV and look at what the tracker sees, including with the v4.0.3 assist bars
-   on and off.
-2. With input reports flowing, log coordinate streams around trigger events to quantify the
-   jitter, then build the `uinput`/Raw Input bridge that latches the last stable coordinate.
-   Gate it on the `In Range` bit.
-3. Flashing an Ultimate image onto a Basic console is now trivially possible and reversible
-   (all three images are public and decryptable). The first-launch accessory check is the
-   thing to actually test.
+1. Get input reports flowing, then log coordinate streams around trigger events to quantify the
+   jitter and build the `uinput`/Raw Input bridge that latches the last stable coordinate. Gate
+   it on the `In Range` bit. Aim the gun at a lit display first — that may be all it takes.
+2. Passively enumerate UVC extension-unit controls on interface 3 to see whether a video-enable
+   path is exposed. Read-only queries only.
+3. Tier 4 (dump the gun's own MCU firmware) is now the higher-value target than the console.
+   It holds the CV, the real coordinate pipeline, and whatever gates the camera.
+4. Flashing an Ultimate image onto a Basic console is trivially possible and reversible (all
+   three images are public and decryptable). The first-launch accessory check is the thing to
+   actually test.
