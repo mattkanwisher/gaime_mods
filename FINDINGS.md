@@ -266,8 +266,58 @@ sensor path. Two candidate routes, neither attempted:
    unknown function code on a device whose firmware is field-flashable could hit something
    persistent or destructive. Derive it from the gun's own firmware first.
 
+One corroborating detail: the vendor's own string descriptor for interface 4 (VideoStreaming)
+reads **"Video Inactive"**. Read with care — in UVC, alt setting 0 of a streaming interface is
+conventionally the zero-bandwidth "inactive" alt, and interface 4 does report
+`bNumEndpoints = 0` at alt 0, so the string may just be labelling that. It is suggestive, not
+proof. The test-pattern measurements above are the load-bearing evidence.
+
 Note the gun's own firmware was never obtained. Everything in §6 came from the *console* image;
 the gun MCU's code is a separate target (Tier 4) and is where a video-enable path would live.
+
+## 7a. Can the gun's MCU be updated over USB? No visible path.
+
+Asked directly, and the answer from every angle available without opening the gun is no.
+
+**The gun exposes no update interface.** `bNumConfigurations = 1` — a single USB configuration,
+no alternate config hiding anything. Its five interfaces are three HID (classes 3) and two Video
+(class 14). There is **no DFU interface** (class 0xFE / subclass 0x01) and **no vendor-class
+interface** (class 0xFF). Nothing to flash into.
+
+**The console never updates the gun.** Two independent checks:
+
+- No gun firmware blob exists anywhere in any SKU's image. Searching all of system, vendor and
+  product for `*.bin`, `*fw*`, `*firmware*`, `*.hex`, `*.dfu`, `*gun*` turns up only stock
+  Allwinner BSP leftovers (a `gslX680` touchscreen blob, `amp_dsp0.bin`, a whole unused face-id
+  model set). Every large member of the GAIME APKs is accounted for as dex, resources, images or
+  an MP4.
+- No code references it. Grepping `GaimeService`, `GaimeCalibration` and the launcher for
+  `bootloader`, `dfu`, `upgrade`, `updateFirmware`, `gunVersion` and similar returns **zero
+  hits**. `Update.apk` is stock Allwinner OTA (`com.softwinner.update`) for the console's own
+  system image, nothing to do with the gun.
+
+The gun's version is reported only as `bcdDevice = 0x0419` and is independent of the console's
+`V4.0.3` version space. Taken together, the gun's firmware looks **factory-programmed only**.
+
+What this does *not* rule out, and what to look for once it is open:
+
+- A bootloader entered by a **button/trigger combo held while plugging in**. Extremely common on
+  this class of device and completely invisible from the descriptors. Cheap to test before
+  opening anything: hold the trigger (and/or any recessed button) while connecting, then re-run
+  `python3 tools/gun_probe.py list` and check whether the VID/PID or interface set changes.
+- An undocumented **sub-function beyond 7** on interface 2 that jumps to a loader. Do not
+  blind-scan this: an unknown function code on a device with a writable loader is exactly how a
+  unit gets bricked.
+- **SWD / JTAG / UART pads on the PCB.** For an ARM Cortex part look for a 4-pad group carrying
+  SWDIO / SWCLK / GND / VCC, or a 2x5 1.27 mm Cortex debug header. Also look for two lone pads
+  near the MCU for a UART console. This is the realistic route to a firmware dump, and whether
+  the flash is readable depends on whether readout protection was set at the factory — check
+  that before assuming a dump is possible.
+
+Worth photographing carefully once open: the MCU, the camera module, any flash chip, and the
+full silkscreen. The part has to combine USB device (composite HID + UVC), a camera interface,
+and enough compute for 30 fps screen-edge detection, which narrows the candidates a lot — but
+identify it from the markings rather than guessing.
 
 ## 8. What is still blocked, and why
 
