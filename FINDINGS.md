@@ -772,3 +772,76 @@ a sector-level plan plus the original bytes of every touched sector. Result:
 `udc-controller@4100000`). Forcing `configfs=1` may also contend with the vendor HAL, which
 expects to own gadget composition. If either is wrong, adb simply will not appear — nothing
 breaks, and `revert` puts all three sectors back byte-exactly.
+
+---
+
+## 10. Gun PCB — first teardown (photo, 2026-07-26)
+
+No public teardown of this device existed before this (§9), so everything here is new. Readings
+below are from a single top-side photo at moderate resolution; items marked *(confirm)* need a
+close-up before being treated as fact.
+
+### Board identification
+
+| | |
+|---|---|
+| Main board | **`LBQ-1585-C-V1.1`**, dated **`2025.7.23`** |
+| Trigger/grip daughterboard | **`LBQ-1585-D-V1.1`**, same date, carries `FPC1` |
+| Extra marking | `D1 2535` near the left edge |
+
+**The board number embeds the USB product ID.** PID `0x0631` = **1585** decimal, and the boards
+are `LBQ-`**`1585`**`-C` and `-D`. So `LBQ-1585` is the internal project number for the gun, and
+the USB PID was assigned from it. Useful for searching Chinese supplier and FCC databases.
+
+### The important find: J3 is a UART header
+
+Along the bottom edge of the main board, a **4-pad header `J3`** with silkscreen reading
+**`GND` / `TX` / `RX` / `V3.3`** *(confirm)*. This is the serial console predicted in §7a and is
+the cheapest route to identifying the SoC and getting a boot log — pads are exposed, labelled, and
+need no chip-level work.
+
+### Other legible features
+
+- **Power rails called out as test points: `1.8V`** (top left) and what reads as a **~`0.9V`**
+  rail near `U9` *(confirm)*. A sub-1V core rail implies an **application-class SoC**, which is
+  consistent with the vendor's "runs Linux, 1 GB RAM" claim (§9) and inconsistent with a
+  microcontroller.
+- **Camera on a separate module** at the muzzle end — a barrel-mounted lens assembly on a ribbon
+  into a white FPC connector near `U5`. The sensor is therefore a discrete, inspectable,
+  potentially replaceable part rather than being on the main PCB.
+- **USB connector**: white multi-pin connector mid-board with `GND` / `D+` / `D-` / `VBUS`
+  silkscreen. This is where the captive cable lands — note the cable is non-removable from the
+  outside (§9), but it is evidently connectorised *internally*.
+- **`CN1`** at top left with red/black wires and **`Motor`** silkscreen beside it — the recoil
+  actuator. A second small connector sits below it.
+- Large central IC in a QFN/BGA-style package, unmarked in this photo — **this is the part to
+  identify**.
+- `Y1` crystal near centre-right; inductors `L1`, `L3`, `L4`; three blue tactile switches
+  (`SW3`/`SW5` and one centre-left); LEDs `D5`, `D6`; a 2D datamatrix sticker mid-board; a dense
+  field of test points `T1`–`T36`.
+
+### What is conspicuously absent
+
+No separate DRAM package and no obvious eMMC or SPI-NOR flash is visible on this side. Either they
+are on the reverse, or the main IC is a **system-in-package with DRAM (and possibly flash) stacked
+in-package** — common for camera and vision SoCs. Resolving this matters: an external SPI-NOR in an
+SOIC-8 could be clipped and read in minutes, whereas in-package storage makes UART or a ROM loader
+the only practical routes.
+
+### Next steps on the hardware
+
+**UART first — this is the high-value, low-risk step.** Use a 3.3 V USB-TTL adapter
+(CP2102/FT232/CH340):
+
+- `GND` ↔ adapter GND, board `TX` → adapter `RX`, board `RX` → adapter `TX`.
+- **Leave `V3.3` unconnected.** The gun is powered from its own USB cable; feeding 3.3 V in from
+  the adapter risks back-powering a rail that is already driven.
+- Start at **115200 8N1**. If that produces garbage, try 921600 and 1500000 (Allwinner-family
+  parts commonly use both).
+- Capture from a *cold* start: attach the adapter, open the terminal, then plug the gun's USB in —
+  the boot log is the payload, and it should name the SoC outright.
+- Watch for a bootloader autoboot countdown that can be interrupted.
+
+Close-ups still wanted: the large central IC (angled light helps laser-etched marks), `U5`, `U9`,
+the `J3` silkscreen, the camera module's own markings, and **the entire reverse side of both
+boards**.
