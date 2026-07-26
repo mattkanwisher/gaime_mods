@@ -8,7 +8,28 @@ Tooling written this session lives in `tools/`. Outputs land in `work/` (gitigno
 ```bash
 python3 tools/gaime_decrypt.py <sku>.dat -o work      # GAIMEENC -> Allwinner .img
 tools/unpack_all.sh work/<sku>.img <tag>              # .img -> super -> EROFS trees
+python3 tools/gun_probe.py list                       # gun HID interfaces
+swiftc -O -swift-version 5 -o work/gun_bridge tools/gun_bridge.swift
+work/gun_bridge --log                                 # seize the digitizer (frees the cursor)
 ```
+
+### Using the gun on macOS without wrecking the desktop
+
+macOS matches interface 1 as a system pointing device, so the gun drives the cursor and its
+tracking noise makes the machine unusable. `tools/gun_bridge.swift` seizes the digitizer
+(`kIOHIDOptionsTypeSeizeDevice`), which stops macOS routing it anywhere, and can re-emit clean
+mouse events only while a chosen app is frontmost:
+
+```bash
+work/gun_bridge --log                                    # seize + print reports
+work/gun_bridge --block                                  # seize + swallow everything
+work/gun_bridge --app RetroArch --require-in-range       # forward only to RetroArch
+```
+
+It needs **Input Monitoring** (to seize) and **Accessibility** (to post events) for the host
+process. Start it before plugging the gun in — it waits for the device and grabs it on arrival,
+so the cursor never gets hijacked. Seizing is also why HID reads returned nothing in §8: macOS
+had the device and would not share it.
 
 ---
 
