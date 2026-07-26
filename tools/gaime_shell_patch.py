@@ -64,6 +64,11 @@ def main() -> None:
                     help="super's first LBA from the device GPT")
     ap.add_argument("--fes-offset", type=int, default=40960,
                     help="GPT LBA minus FES logical address")
+    ap.add_argument("--only-insert", metavar="PROP",
+                    help="plan just one added property, into an unused comment line "
+                         "(use with --skip-comments so it lands somewhere untouched)")
+    ap.add_argument("--skip-comments", type=int, default=0,
+                    help="how many comment lines after the anchor are already in use")
     args = ap.parse_args()
 
     args.outdir.mkdir(parents=True, exist_ok=True)
@@ -74,6 +79,24 @@ def main() -> None:
     edits = []
     with args.super_img.open("rb") as fh:
         m = mmap.mmap(fh.fileno(), 0, access=mmap.ACCESS_READ)
+
+        if args.only_insert:
+            prop = args.only_insert.encode()
+            pad = len(COMMENT) - len(prop) - 1
+            if pad < 0:
+                sys.exit(f"{args.only_insert!r} is too long for a 36-byte comment line")
+            ins = prop + b"\n" + b"#" * pad
+            anchor = (find_all(m, b"ro.debuggable=0") or find_all(m, b"ro.debuggable=1"))[0]
+            spots = find_all(m, COMMENT, anchor, anchor + 8192)
+            if len(spots) <= args.skip_comments:
+                sys.exit("not enough spare comment lines after the anchor")
+            spot = spots[args.skip_comments]
+            data[spot:spot + len(ins)] = ins
+            edits.append((spot, "#" * 36, ins.decode().replace("\n", "\\n")))
+            m.close()
+            REPLACEMENTS.clear()
+            INSERTS.clear()
+
         for old, new, expect in REPLACEMENTS:
             hits = find_all(m, old)
             if expect is not None and len(hits) != expect:
@@ -84,16 +107,21 @@ def main() -> None:
                 data[off:off + len(new)] = new
                 edits.append((off, old.decode(), new.decode()))
 
-        anchor = find_all(m, b"ro.debuggable=0")[0]
-        spots = find_all(m, COMMENT, anchor, anchor + 4096)
-        if len(spots) < len(INSERTS):
+        if not INSERTS:
+            m.close()
+            spots = []
+        else:
+            anchor = find_all(m, b"ro.debuggable=0")[0]
+            spots = find_all(m, COMMENT, anchor, anchor + 4096)
+        if INSERTS and len(spots) < len(INSERTS):
             sys.exit(f"need {len(INSERTS)} comment lines after ro.debuggable, "
                      f"found {len(spots)}")
         for spot, ins in zip(spots, INSERTS):
             assert len(ins) == len(COMMENT)
             data[spot:spot + len(ins)] = ins
             edits.append((spot, "#" * 36, ins.decode().replace("\n", "\\n")))
-        m.close()
+        if INSERTS:
+            m.close()
 
     print("edits:")
     for off, a, b in edits:
