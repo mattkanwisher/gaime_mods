@@ -337,9 +337,11 @@ case .bridge(let app):
         .appending("Ctrl-C to release.\n").data(using: .utf8)!)
 }
 
-signal(SIGINT) { _ in
-    bridge.summary()
-    exit(0)
+for sig in [SIGINT, SIGTERM] {
+    signal(sig) { _ in
+        bridge.summary()
+        exit(0)
+    }
 }
 
 CFRunLoopRun()

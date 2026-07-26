@@ -21,15 +21,41 @@ tracking noise makes the machine unusable. `tools/gun_bridge.swift` seizes the d
 mouse events only while a chosen app is frontmost:
 
 ```bash
-work/gun_bridge --log                                    # seize + print reports
-work/gun_bridge --block                                  # seize + swallow everything
-work/gun_bridge --app RetroArch --require-in-range       # forward only to RetroArch
+work/gun_bridge --log                    # seize + print reports
+work/gun_bridge --block                  # seize + swallow everything
+work/gun_bridge --app RetroArch          # forward only while RetroArch is frontmost
 ```
 
 It needs **Input Monitoring** (to seize) and **Accessibility** (to post events) for the host
 process. Start it before plugging the gun in — it waits for the device and grabs it on arrival,
-so the cursor never gets hijacked. Seizing is also why HID reads returned nothing in §8: macOS
-had the device and would not share it.
+so the cursor never gets hijacked. **Seize is confirmed working on hardware.** It is also why
+HID reads returned nothing in §8: macOS had the device open and would not share it.
+
+### Measured behaviour of the pointer stream
+
+Captured with `--log` while the gun sat on a desk, not aimed at a display:
+
+| | |
+|---|---|
+| Report rate | **~278 Hz** in one 10 s capture, **~28 Hz** in another — highly variable |
+| X range | 99 … 9900 (full span) |
+| Y range | 99 … 9900 (full span) |
+| Mean per-report jump | \|dX\| 93.5, \|dY\| 86.6 counts |
+| Worst single jump | 4841 counts — about half the screen in one report |
+| `in_range` | **set in 2781 / 2781 reports**, while producing the above |
+
+Two things matter here. First, the declared logical range is 0..10000 but the gun clamps to
+**99..9900**, so that is what should be mapped to screen coordinates. Second, **the `in_range`
+bit is asserted continuously even while the output is garbage**, so it is useless as a validity
+gate — an earlier guess that it would make a good filter was wrong.
+
+With no valid screen lock the gun does not jitter gently around a point; it sweeps the entire
+coordinate space. For an *absolute* pointer at up to 278 Hz that means the cursor is teleported
+hundreds of times a second and the desktop becomes unusable, which is exactly the reported
+symptom. Hence rejecting outliers geometrically: a median-of-5 spike filter plus a max-jump gate,
+with a run of 6 consecutive "outliers" accepted anyway so genuine fast aiming still tracks. On
+resting garbage that rejects ~16% of reports; the thresholds still need tuning against data from
+a gun actually aimed at a display.
 
 ---
 
