@@ -1004,3 +1004,39 @@ no output at all, verifiable only by whether the console visibly boots.
 this device has.** `console=ttyAS0,115200` is already in the bootargs, and `ro.debuggable=1`
 is already written to flash, so `service console /system/bin/sh` should give a root shell the
 moment a serial adapter is attached — the shell and the diagnostics in one step.
+
+## 13. ADB over USB: five patches, still no enumeration — stopping here
+
+All of the following are on flash and read-back verified on the device:
+
+```
+persist.sys.usb0device=1                     rear port into device mode
+setprop sys.usb.configfs 2 -> 1              lets the stock start-adbd triggers fire
+persist.sys.usb.config=adb                   selects the adb function at boot
+sys.usb.controller=4100000.udc-controller    UDC to bind (corrected from sunxi_usb_udc)
+ro.adb.secure=1 -> 0, ro.debuggable=0 -> 1   no auth prompt, root shell
+```
+
+After a normal boot the console still does not enumerate at all — not as adb, not as
+anything. It only ever appears on USB while the pinhole is held (BROM FEL).
+
+**What is nonetheless established.** Replacing the U-Boot boot logo worked and is visible on
+the TV, which proves flash writes land *and* are read by a real boot. So these properties are
+genuinely present and being consumed; the failure is somewhere in the Android USB gadget path,
+not in getting bytes onto the device.
+
+**Remaining unknowns, none resolvable without a console:**
+
+1. Whether a `persist.` property set from `build.prop` actually fires an `on property:` init
+   trigger during early boot — if not, the device-mode switch never runs.
+2. Whether `sunxi_usb_udc.ko` (a vendor_boot ramdisk module) loads at all.
+3. Whether forcing `configfs=1` contends with the vendor gadget HAL, which expects to own
+   composition and sets 2 itself.
+4. Whether `4100000.udc-controller` is the actual entry in `/sys/class/udc` — derived from
+   Linux's DT naming rule, never observed.
+
+Each needs one line of shell to settle and cannot be inferred from the images. Five blind
+attempts is enough; **the debug UART is the only remaining route** (PB09 TX / PB10 RX / GND,
+115200). `console=ttyAS0,115200` is already in the bootargs and `ro.debuggable=1` is already
+applied, so `service console /system/bin/sh` should offer a root shell as soon as a serial
+adapter is attached — the diagnosis and the shell in the same step.
