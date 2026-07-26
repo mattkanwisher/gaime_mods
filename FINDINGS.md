@@ -329,16 +329,33 @@ What this does *not* rule out, and what to look for once it is open:
 - An undocumented **sub-function beyond 7** on interface 2 that jumps to a loader. Do not
   blind-scan this: an unknown function code on a device with a writable loader is exactly how a
   unit gets bricked.
-- **SWD / JTAG / UART pads on the PCB.** For an ARM Cortex part look for a 4-pad group carrying
-  SWDIO / SWCLK / GND / VCC, or a 2x5 1.27 mm Cortex debug header. Also look for two lone pads
-  near the MCU for a UART console. This is the realistic route to a firmware dump, and whether
-  the flash is readable depends on whether readout protection was set at the factory — check
-  that before assuming a dump is possible.
+- **A serial console or a SoC loader mode on the PCB.** See the correction below — this is the
+  realistic route, but look for UART rather than SWD first.
 
-Worth photographing carefully once open: the MCU, the camera module, any flash chip, and the
-full silkscreen. The part has to combine USB device (composite HID + UVC), a camera interface,
-and enough compute for 30 fps screen-edge detection, which narrows the candidates a lot — but
-identify it from the markings rather than guessing.
+### Correction: the gun is not a microcontroller
+
+Earlier guidance here assumed a Cortex-M class MCU and pointed at SWD. That is wrong. Per the
+vendor's own published specs (§9), **each gun runs Linux with 1 GB of RAM and a 1080p camera in
+the barrel.** That is an application processor with external DRAM and its own boot medium, not an
+MCU with internal flash. Practical consequences:
+
+- **Look for UART before SWD.** A Linux SoC almost always leaves a serial console; two or three
+  lone pads near the SoC with a ground nearby. 3.3 V, most likely 115200 8N1. That gets you a
+  boot log naming the SoC, and quite possibly a root shell or an interruptible bootloader — far
+  cheaper than any silicon-level attack.
+- **There is a separate boot medium to find** — eMMC, NAND, or SPI-NOR. An SPI-NOR chip in an
+  SOIC-8 can be read in place with a clip and a cheap programmer, which would be the fastest
+  path to a full firmware image.
+- **The SoC likely has its own USB loader** (an FEL-style ROM recovery mode, if it is another
+  Allwinner part — the OSI page's `libcedarx`/`libcedarc` entries show they are an Allwinner
+  house). That would be entered by shorting a test point or holding a button at power-on, and
+  would appear as a *different* VID/PID. `tools/gun_snapshot.sh` is set up to catch exactly that.
+- Readout protection is much less of a concern than it would be on an MCU; the risk shifts to
+  whether the rootfs is signed/verified, which matters for *writing* but not for *dumping*.
+
+Worth photographing carefully once open: the SoC, the camera module, the DRAM, any flash chip,
+every test pad and the full silkscreen both sides. No public teardown exists (§9), so good board
+photos are a genuine contribution regardless of what else comes out of it.
 
 ## 8. What is still blocked, and why
 
@@ -364,26 +381,187 @@ vendor interface at least.
 
 ---
 
+## 9. The public record (researched 2026-07-26)
+
+Searched in English, Japanese (達成電器 / ガイム / 分解) and Chinese (达成电器 / 拆解 / 拆机)
+across YouTube, Bilibili, Reddit, shmups.system11.org, arcade-projects.com, sindenwiki.org,
+wiki.batocera.org and the retro press.
+
+### There is no teardown. At all.
+
+**Zero PCB photos, zero chip markings, zero disassembly guides, zero screw or clip
+documentation, no iFixit page, no repair thread.** Every "internals" claim in circulation traces
+back to vendor PR rather than to anyone who opened one. The USB descriptor data in §6 is already
+more hardware detail than the entire public record contains, and the gun's `4.19`/`4.25` version
+strings appear to be **unpublished anywhere** — original information.
+
+Two near-misses worth knowing about so they aren't chased twice:
+
+- *"Gaime LightGun and Console, Is it Worth Modding?"* (Vic_VP,
+  <https://www.youtube.com/watch?v=za7GPY8yjHY>) — 16m39s, published 7 Nov 2025, i.e. **before
+  retail units shipped**. Not a teardown; treat as speculation.
+- The shmups thread (<https://shmups.system11.org/viewtopic.php?t=76854>, 43 posts) is entirely
+  purchase and accuracy discussion. One member guesses the CV runs console-side; the PC evidence
+  below contradicts that, and so does §1.
+
+### Gun hardware — vendor-sourced, but it exists
+
+RetroDodo's launch review is the only outlet that published a spec sheet
+(<https://retrododo.com/a-day-with-gaime/>):
+
+> Guns: **1080p camera inside the barrel, runs Linux, 1 GB RAM per gun.** Console: custom
+> Android OS, 2 GB RAM, octa-core ARM Cortex-A55. Camera recessed inside the barrel to protect
+> it. Cable non-removable; a replacement means buying a new gun (~£50–60).
+
+Corroborating vendor language elsewhere: a "bespoke chipset" (Time Extension), and "a combination
+of high-resolution cameras, **gyroscopes**, and AI chips"
+(<https://lightgungamer.com/gaime-review-the-99-plug-play-lightgun-that-actually-works/>). The
+gyroscope claim is unverified and does not appear in any HID descriptor on our unit.
+
+**No source names a single chip.** Distrust anyone who claims otherwise.
+
+Note one conflict with our own primary evidence: the console's factory U-Boot log reports
+`DRAM: 512 MiB` (§1), while marketing says 2 GB. The boot log is the better source, though it
+could plausibly come from a pre-production or differently-populated unit. Unresolved.
+
+### Dashine is confirmed as the parent, and as the USB vendor
+
+Strong corroboration for the `D:\Dashine\New Products\Lightgun\…` build path in §2:
+
+- `USB\VID_2E2C = Dashine Electronics Co, Ltd` — <https://the-sz.com/products/usbid/index.php?v=0x2e2c>.
+  Note this is the *only* public registry hit; 2E2C is absent from linux-usb.org's `usb.ids`.
+- Tassei Denki KK (est. Nov 2021, Tokyo) is a **subsidiary of Dashine Electronics Group** — a
+  HID/gamepad ODM operating since 2007, manufacturing in Huizhou and Shenzhen. <https://www.dashine.net/>
+- **GAIME was first announced under the Dashine name at TGS 2024**, before the Bandai Namco
+  licence was public — <https://www.gamespot.com/articles/time-crisis-is-coming-to-modern-tvs-through-an-ai-powered-light-gun-device/1100-6526692/>
+- Retail listings still name Dashine as manufacturer of record.
+
+Nothing connects "Dashine" to camera-module manufacturing, so the `Dashine UVC` string is just
+the ODM's name stamped on a generic UVC bridge.
+
+### The OSI page is the most useful public artifact
+
+<https://www.mygaime.com/osi> (the HTML page lists more than the linked PDF). Load-bearing
+entries:
+
+- **`libcedarx` / `libcedarc`** — Allwinner's media framework and codec library
+  (<https://linux-sunxi.org/CedarX>), alongside AOSP `libaaudio`/`libmedia`/`libgui`. Independent
+  circumstantial confirmation of the Allwinner-on-Android stack in §1.
+- **`onnxruntime` 1.19.0** and `opencv-python` 4.10 — **the on-device "AI" is an ONNX model**, not
+  hand-written CV.
+- **`torch` 2.4.0+cu118`, `torchvision`, `torch-tb-profiler`** — CUDA builds, i.e. their internal
+  *training* pipeline leaked into the notice file.
+- **`flutter_quad_annotator`** — a four-corner quadrilateral annotation widget.
+
+Those last three together describe the whole pipeline: humans label screen quads in captured
+frames, a model is trained, exported to ONNX, and inferred on device. Tassei Denki independently
+described exactly this to Time Extension ("identifying regions that exhibit screen-like
+features… determine the screen's boundaries and **vertices**"). Training-set size is quoted
+inconsistently — 3,000 screens to Time Extension, "hundreds of thousands" to RetroDodo.
+
+Also listed: `hidapi`, `openssl`, `dosfstools`, `box2d`, `openal`, Unity UI, and a full backend
+stack. Plus **`electron-builder`/`electron-updater`/`sudo-prompt`** — see the correction below.
+
+### The PC-as-light-gun reports, and the trigger jitter
+
+Two independent primary sources, and both matter for Tier 2.
+
+MP1st's review is the most detailed account in existence
+(<https://mp1st.com/reviews/gaime-review-lightgun-fun-on-the-flatscreen>):
+
+- Windows 11 names it **"GAIME v1" with a webcam icon**; the system cursor vanishes and tracks
+  the gun "extremely erratically" — consistent with §6 and with why `gun_bridge` is needed.
+- Button-to-keystroke map: **A = space, B = `b`, Coin = `c`, Start = `q`**. This is our keyboard
+  interface (§6, interface 0) and saves a round of probing.
+- Trigger acts as a mouse click; **"Windows saw it as a touch pointer when I moved it while the
+  trigger was held"** — that is the digitizer interface asserting itself.
+- The Recoil switch produces no host input (gun-local state only), and **the pedal is not
+  detected by a PC at all**.
+- Calibration is console-only, so bare-PC aim stays poor.
+
+The trigger-pull jitter in the brief traces to one specific primary source — commenter #19
+"benjaminer" on the Time Extension review (comments are JS-gated behind "Show Comments"):
+
+> "I've plugged one of the guns into my laptop and behaves like as a mouse and **didn't need any
+> calibration** … It seems that **pulling the trigger is part of what causes the inaccuracy** as
+> I could see the mouse pointer jump around when I pulled the trigger."
+
+Reproducible with the gun held still, per the same thread. VGC also reports someone running the
+guns on PC **via a PS2 emulator with better accuracy than the G'AIM'E console itself**
+(<https://www.videogameschronicle.com/review/gaime-light-gun-review-an-expensive-way-to-play-time-crisis-but-its-hiding-a-big-secret/>
+— the headline's "big secret" *is* the USB-mouse behaviour).
+
+"Gun runs Linux with 1 GB RAM" plus "usable absolute coordinates with zero calibration on a bare
+laptop" independently confirms §6: **the vision runs gun-side.**
+
+### Nobody has done Tier 2
+
+No MAME, RetroArch, Batocera or Sinden integration exists anywhere — not in
+wiki.batocera.org's light gun guide, not on sindenwiki.org, no GitHub project, no HID report
+descriptor dump, no `uinput` bridge. The vendor HID page 0xFF00 (§6) is undocumented publicly.
+
+### Correction to the brief (CLAUDE.md §3.5)
+
+CLAUDE.md dismisses the pre-launch mobile-app update story as outdated. It is more tangled than
+that. RetroDodo's **launch-day** review states updates require an Android or iOS app plugged into
+the console, and the OSI page confirms both a real Flutter app *and* an Electron desktop app
+(`electron-builder`, `electron-updater`, and `sudo-prompt` — that last one being the privilege
+escalation for driver installation). The shipped V4.0.3 path is the Windows tool; the app route is
+either parallel or abandoned, not nonexistent.
+
+### No public gun-firmware update path either
+
+Independently corroborates §7a. No DFU mode, no bootloader, no button combo, no separate gun
+firmware download, and no gun version numbers documented anywhere. Only V4.0.3 (9 Mar 2026) is
+public and it is explicitly a *console* release — the official post is titled "Firmware Update
+V4.0.3 Available for the G'AIM'E TIME CRISIS **Mini-Console**"
+(<https://www.mygaime.com/post/firmware-update-v4-0-3-available-for-the-g-aim-e-time-crisis-mini-console>).
+Whether the console pushes anything to the guns is undocumented publicly; §7a shows it does not.
+
+### Highest-value unexplored source
+
+The **official Discord** (<https://discord.gg/MAhMpTZSsH>) is not indexed and was not readable by
+the research pass. mygaime.com's FAQ points there for support and the site's own "community forum"
+links 404, so it is very likely where gun firmware versions and any update mechanics are actually
+discussed. Worth searching it for "firmware" before opening the grip. The site FAQ itself is
+nearly empty — the "Product Specifics" tab is an unpopulated Wix tab with nothing behind it.
+
+---
+
 ## Open questions remaining
 
-- Trigger-pull jitter: still not characterised. Needs input reports flowing (§8).
+- Trigger-pull jitter: not yet characterised on our unit, but now confirmed reproducible by an
+  independent primary source (§9) with the gun held still. Quantifying it is the next real task.
 - Whether the gun streams pointer reports without screen lock, or only once `In Range` is true.
 - Whether real video can be enabled over UVC at all, and if so by what (§7).
 - What the MD5 handshake (sub-function 7) covers, and whether it gates pointing or only game
   entitlement.
-- Whether calibration coefficients can be pushed from a non-Android host — the framing is
-  known and writes work, so this is now a small experiment.
+- Whether calibration coefficients can be pushed from a non-Android host. The framing is known
+  and writes work, so this is a small experiment — and it is the thing that would make the
+  console genuinely optional.
+- The gun SoC's identity, its boot medium, and whether it has a UART console or a ROM loader.
+  Nothing public exists (§9); this needs the teardown.
+- The console DRAM conflict: factory boot log says 512 MiB, marketing says 2 GB (§1, §9).
 - Where exactly inside `data.unity3d` the System 22 ROM data sits.
 
 ## Next actions
 
-1. Get input reports flowing, then log coordinate streams around trigger events to quantify the
-   jitter and build the `uinput`/Raw Input bridge that latches the last stable coordinate. Gate
-   it on the `In Range` bit. Aim the gun at a lit display first — that may be all it takes.
-2. Passively enumerate UVC extension-unit controls on interface 3 to see whether a video-enable
-   path is exposed. Read-only queries only.
-3. Tier 4 (dump the gun's own MCU firmware) is now the higher-value target than the console.
-   It holds the CV, the real coordinate pipeline, and whatever gates the camera.
-4. Flashing an Ultimate image onto a Basic console is trivially possible and reversible (all
-   three images are public and decryptable). The first-launch accessory check is the thing to
-   actually test.
+1. **Characterise the jitter.** Run `work/gun_bridge --log` aimed at a lit display and capture
+   coordinate streams either side of trigger-down. The independent report in §9 says the pointer
+   jumps on trigger pull with the gun stationary, so this should reproduce readily. Then build the
+   latch-and-hold filter on top of the bridge, gated on `In Range`.
+2. **Drive interface 2 for calibration.** Writes and acks already work (§6). Pushing calibration
+   coefficients from macOS is the highest-leverage unproven step — it is what turns this into a
+   general-purpose light gun rather than a console accessory. Nobody has done it (§9).
+3. **Search the official Discord for "firmware"** before opening anything. It is unindexed and is
+   the most likely place gun firmware versions and update mechanics are actually discussed (§9).
+   Also try the button-combo-at-plug-in test with `tools/gun_snapshot.sh` — five minutes, and it
+   would find a loader mode if one exists.
+4. **Teardown.** Look for UART before SWD, and for a separate flash chip — the gun is a Linux SoC
+   with 1 GB of RAM, not an MCU (§7a correction). No public teardown exists, so good board photos
+   are worth publishing on their own merits.
+5. Flashing an Ultimate image onto a Basic console is trivially possible and reversible. The
+   first-launch accessory check is the thing to actually test.
+6. Lower priority: the MAME/RetroArch side is completely undocumented for this device (§9). The
+   button map from MP1st (`A`=space, `B`=b, Coin=c, Start=q) is a free head start on a `ctrlr`
+   config once aiming is usable.

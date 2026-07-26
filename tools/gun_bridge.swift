@@ -28,7 +28,17 @@ import AppKit
 let kVendorID = 0x2E2C
 let kProductID = 0x0631
 let kDigitizerUsagePage = 0x0D
-let kLogicalMax = 10000.0
+
+// The descriptor declares 0..10000, but the gun clamps to this observed range.
+let kLogicalMin = 99.0
+let kLogicalMax = 9900.0
+
+// Measured on hardware: the gun reports at ~278 Hz, and with no valid screen lock
+// it sweeps the whole coordinate space while still asserting in_range. So in_range
+// is NOT a usable validity signal — outliers have to be rejected geometrically.
+let kDefaultMedian = 5
+let kDefaultMaxJump = 400.0
+let kOutlierRunToAccept = 6
 
 // MARK: - options
 
@@ -41,7 +51,8 @@ enum Mode {
 struct Options {
     var mode: Mode = .log
     var latchMs: Double = 60
-    var requireInRange = false
+    var median = kDefaultMedian
+    var maxJump = kDefaultMaxJump
     var verbose = false
 }
 
@@ -62,7 +73,14 @@ func parseArgs() -> Options {
             i += 1
             guard i < args.count, let v = Double(args[i]) else { fail("--latch-ms needs a number") }
             o.latchMs = v
-        case "--require-in-range": o.requireInRange = true
+        case "--median":
+            i += 1
+            guard i < args.count, let v = Int(args[i]), v >= 1 else { fail("--median needs a positive integer") }
+            o.median = v
+        case "--max-jump":
+            i += 1
+            guard i < args.count, let v = Double(args[i]), v > 0 else { fail("--max-jump needs a positive number") }
+            o.maxJump = v
         case "--verbose", "-v": o.verbose = true
         case "--help", "-h": usage(); exit(0)
         default: fail("unknown argument: \(args[i])")
@@ -82,8 +100,14 @@ func usage() {
       --app <name>          seize, and re-emit mouse events only while <name> is frontmost
                             (matches bundle id, bundle name, or localized name, case-insensitive)
       --latch-ms <n>        freeze coordinates for n ms around a trigger edge (default 60)
-      --require-in-range    ignore reports whose in-range bit is clear
+      --median <n>          median-of-n spike filter (default \(kDefaultMedian); 1 disables)
+      --max-jump <n>        reject moves larger than n logical counts as outliers
+                            (default \(Int(kDefaultMaxJump)); \(kOutlierRunToAccept) in a row are accepted
+                            anyway so genuine fast movement still works)
       --verbose             log every report in bridge mode too
+
+    Note: the in-range bit is asserted even when the gun is producing garbage, so it
+    is not usable as a validity gate. Outliers are rejected geometrically instead.
     """)
 }
 
@@ -94,6 +118,20 @@ func fail(_ msg: String) -> Never {
 
 // MARK: - state
 
+/// Median-of-N over a sliding window. Cheap, and unlike a mean it rejects spikes
+/// outright rather than smearing them across neighbouring samples.
+struct MedianWindow {
+    private var buf: [Double] = []
+    let size: Int
+    init(size: Int) { self.size = size }
+    mutating func push(_ v: Double) -> Double {
+        buf.append(v)
+        if buf.count > size { buf.removeFirst() }
+        return buf.sorted()[buf.count / 2]
+    }
+    mutating func reset() { buf.removeAll() }
+}
+
 final class Bridge {
     let opts: Options
     private var lastX = 0.0, lastY = 0.0
@@ -101,10 +139,18 @@ final class Bridge {
     private var lastTip = false
     private var latchUntil = 0.0
     private var latchedX = 0.0, latchedY = 0.0
+    private var medX: MedianWindow
+    private var medY: MedianWindow
+    private var outlierRun = 0
     private var reportCount = 0
     private var suppressedCount = 0
+    private var rejectedCount = 0
 
-    init(opts: Options) { self.opts = opts }
+    init(opts: Options) {
+        self.opts = opts
+        self.medX = MedianWindow(size: opts.median)
+        self.medY = MedianWindow(size: opts.median)
+    }
 
     /// True when the target application currently owns the foreground.
     private func targetIsFrontmost(_ name: String) -> Bool {
@@ -140,9 +186,25 @@ final class Bridge {
         if case .block = opts.mode { return }
         guard case .bridge(let app) = opts.mode else { return }
 
-        if opts.requireInRange && !inRange {
-            suppressedCount += 1
-            return
+        _ = inRange  // always asserted; see kDefaultMaxJump comment
+
+        // Median-filter to kill isolated spikes, then gate on how far the smoothed
+        // position moved. A sustained run of "outliers" is a real movement, so accept
+        // it and re-seed rather than locking the pointer out forever.
+        let sx = medX.push(rawX)
+        let sy = medY.push(rawY)
+
+        if haveLast {
+            let dist = ((sx - lastX) * (sx - lastX) + (sy - lastY) * (sy - lastY)).squareRoot()
+            if dist > opts.maxJump {
+                outlierRun += 1
+                if outlierRun < kOutlierRunToAccept {
+                    rejectedCount += 1
+                    return
+                }
+                medX.reset(); medY.reset()
+            }
+            if dist <= opts.maxJump { outlierRun = 0 }
         }
 
         let now = CFAbsoluteTimeGetCurrent()
@@ -154,11 +216,11 @@ final class Bridge {
             if haveLast { latchedX = lastX; latchedY = lastY }
         }
 
-        var x = rawX, y = rawY
+        var x = sx, y = sy
         if now < latchUntil && haveLast {
             x = latchedX; y = latchedY
         } else {
-            lastX = rawX; lastY = rawY; haveLast = true
+            lastX = sx; lastY = sy; haveLast = true
         }
 
         let wasDown = lastTip
@@ -179,8 +241,11 @@ final class Bridge {
 
     private func emit(x: Double, y: Double, tip: Bool, wasDown: Bool) {
         let bounds = CGDisplayBounds(CGMainDisplayID())
-        let pt = CGPoint(x: bounds.origin.x + bounds.width * min(max(x / kLogicalMax, 0), 1),
-                         y: bounds.origin.y + bounds.height * min(max(y / kLogicalMax, 0), 1))
+        let span = kLogicalMax - kLogicalMin
+        let fx = min(max((x - kLogicalMin) / span, 0), 1)
+        let fy = min(max((y - kLogicalMin) / span, 0), 1)
+        let pt = CGPoint(x: bounds.origin.x + bounds.width * fx,
+                         y: bounds.origin.y + bounds.height * fy)
         let source = CGEventSource(stateID: .hidSystemState)
 
         if tip != wasDown {
@@ -195,8 +260,12 @@ final class Bridge {
     }
 
     func summary() {
-        FileHandle.standardError.write(
-            "\ngun_bridge: \(reportCount) reports, \(suppressedCount) suppressed\n".data(using: .utf8)!)
+        FileHandle.standardError.write("""
+
+            gun_bridge: \(reportCount) reports, \(rejectedCount) rejected as outliers, \
+            \(suppressedCount) suppressed (app not frontmost)
+
+            """.data(using: .utf8)!)
     }
 }
 
