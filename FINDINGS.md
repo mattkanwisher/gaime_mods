@@ -882,12 +882,27 @@ Board outline measures roughly **90 × 45 mm** against the cutting mat.
 
 ### Next steps on the hardware
 
-**UART first — this is the high-value, low-risk step.** Use a 3.3 V USB-TTL adapter
-(CP2102/FT232/CH340):
+**UART first — this is the high-value, low-risk step.** You need a **USB-to-TTL serial adapter**
+(sold as a "USB-UART bridge" or "FTDI cable") with **3.3 V logic levels**. On macOS a **CP2102** or
+**FT232RL** board is the least trouble, since Apple ships drivers for both; CH340 works on recent
+macOS but has historically needed a kext. Any of them cost a few dollars. If the board has a 5V/3V3
+jumper, **set it to 3.3 V** — 5 V logic into these pins risks the SoC.
 
-- `GND` ↔ adapter GND, board `TX` → adapter `RX`, board `RX` → adapter `TX`.
+**Two wires are enough to read**, and reading is where all the value is:
+
+- `J3 GND` → adapter `GND`
+- `J3 TX` → adapter `RX`  (the data lines cross)
+
+Add `J3 RX` ← adapter `TX` only when you actually want to type at the bootloader. Leaving it off
+until then makes the setup **read-only and incapable of damaging anything**, which also sidesteps a
+real risk: the board has a 1.8 V rail and 1.8 V flash, so if the SoC's I/O turns out to be 1.8 V
+rather than the 3.3 V that `J3` advertises, a 3.3 V TX could over-drive its RX pin. The boot log
+will tell you which world you are in before you commit.
+
 - **Leave `V3.3` unconnected.** The gun is powered from its own USB cable; feeding 3.3 V in from
   the adapter risks back-powering a rail that is already driven.
+- `tools/uart_capture.sh` handles the host side with no dependencies — `scan` tries the common baud
+  rates and scores each by how much printable text comes back, then `read <baud> <file>` captures.
 - Start at **115200 8N1**. If that produces garbage, try 921600 and 1500000 (Allwinner-family
   parts commonly use both).
 - Capture from a *cold* start: attach the adapter, open the terminal, then plug the gun's USB in —
