@@ -57,13 +57,77 @@ def read_sector(fes, fes_sector: int) -> bytes:
     return d
 
 
+def write_partition(args) -> None:
+    """Write only the sectors that differ between a dumped partition and a new one.
+
+    Same safety model as the sector plans: every sector that will change must
+    currently hold exactly the dumped original, otherwise we abort rather than
+    overwrite something unexpected. Everything is read back and compared.
+    """
+    for need in ("original", "modified", "gpt_lba"):
+        if getattr(args, need) is None:
+            sys.exit(f"write-partition needs --{need.replace('_', '-')}")
+
+    orig = args.original.read_bytes()
+    new = args.modified.read_bytes()
+    if len(orig) != len(new):
+        sys.exit(f"size mismatch: {len(orig)} vs {len(new)} — refusing")
+
+    base = args.gpt_lba - args.fes_offset
+    changed = [i for i in range(len(orig) // SECTOR)
+               if orig[i * SECTOR:(i + 1) * SECTOR] != new[i * SECTOR:(i + 1) * SECTOR]]
+    print(f"{len(changed)} of {len(orig) // SECTOR} sectors differ "
+          f"({len(changed) * SECTOR / 2**20:.1f} MiB), FES base {base}")
+    if not changed:
+        print("nothing to do")
+        return
+
+    usb = gfes.Usb()
+    fes = gfes.Fes(usb)
+    try:
+        dev = fes.verify_device()
+        if dev["mode"] != 2:
+            sys.exit("device is not in FES mode — run tools/enter_fes.sh first")
+        fes.flash_set(True)
+
+        if not args.yes:
+            print(f"\nAbout to WRITE {len(changed)} sectors to flash.")
+            if input("Type 'write' to proceed: ").strip() != "write":
+                sys.exit("aborted")
+
+        for n, i in enumerate(changed):
+            want = new[i * SECTOR:(i + 1) * SECTOR]
+            have_orig = orig[i * SECTOR:(i + 1) * SECTOR]
+            cur = read_sector(fes, base + i)
+            if cur == want:
+                continue
+            if cur != have_orig:
+                sys.exit(f"\nFES {base + i}: on-device content matches neither the dump "
+                         f"nor the new image — aborting")
+            write_sector(fes, base + i, want)
+            if read_sector(fes, base + i) != want:
+                sys.exit(f"\nFES {base + i}: read-back MISMATCH — stop")
+            if n % 256 == 0:
+                print(f"\r  {n}/{len(changed)} sectors", end="", flush=True)
+        print(f"\r  {len(changed)}/{len(changed)} sectors written and verified")
+    finally:
+        usb.close()
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("action", choices=("apply", "revert", "verify"))
-    ap.add_argument("plandir", type=Path)
+    ap.add_argument("action", choices=("apply", "revert", "verify", "write-partition"))
+    ap.add_argument("plandir", type=Path, nargs="?")
     ap.add_argument("--yes", action="store_true", help="skip the confirmation prompt")
+    ap.add_argument("--original", type=Path, help="write-partition: the dumped partition")
+    ap.add_argument("--modified", type=Path, help="write-partition: the new content")
+    ap.add_argument("--gpt-lba", type=int, help="write-partition: partition's first LBA")
+    ap.add_argument("--fes-offset", type=int, default=40960)
     args = ap.parse_args()
+
+    if args.action == "write-partition":
+        return write_partition(args)
 
     plan = json.loads((args.plandir / "plan.json").read_text())
     src = "patched" if args.action == "apply" else "original"
