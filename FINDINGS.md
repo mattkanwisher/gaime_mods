@@ -639,11 +639,12 @@ with the stock Windows updater — filenames and sizes are unchanged, so it need
 
 **None of this has been flashed.** Specifically unproven:
 
-- That `ro.debuggable=1` + `persist.sys.usb.config=adb` is enough to make the framework ask the
-  gadget HAL for adb. This is the biggest unknown — the HAL supports it, but the trigger path
-  runs through `UsbDeviceManager`/`Settings.Global.ADB_ENABLED`, which is seeded from
-  `ro.debuggable` on a wiped `/data`. If it does not fire, the fallback is adding an init `.rc`
-  with `sys.usb.configfs=2` triggers, which needs a real (SELinux-label-preserving) EROFS rebuild.
+- ~~That `ro.debuggable=1` + `persist.sys.usb.config=adb` is enough to make the framework ask
+  the gadget HAL for adb.~~ **Disproved — see §11.** Decompiling the *device's own*
+  `SettingsProvider` shows `loadGlobalSettings` never seeds `adb_enabled` at all, so
+  `ro.debuggable` does not switch the framework path on. The patched 4.0.3 `.dat` in §10 would
+  therefore have flashed and booted cleanly and produced no adb. §11 has the version that
+  actually works.
 - That `Vsuper` is the *only* thing the flasher validates.
 - SELinux stays enforcing (`user` build compiles out `androidboot.selinux=permissive`), so
   `adb shell` should work in the `shell` domain but `adb root` may not — the `su` domain is
@@ -700,3 +701,74 @@ networking — the vendor rc already creates an `ncm.gs6` (USB ethernet) gadget 
 6. Lower priority: the MAME/RetroArch side is completely undocumented for this device (§9). The
    button map from MP1st (`A`=space, `B`=b, Coin=c, Start=q) is a free head start on a `ctrlr`
    config once aiming is usable.
+
+---
+
+## 11. Getting a shell on the installed firmware (patch planned, not yet written)
+
+§10's plan was wrong in one load-bearing way. This section supersedes it.
+
+### Why `ro.debuggable=1` is not enough
+
+Decompiling the **device's own** `SettingsProvider` (from the flash dump, not the download)
+shows `loadGlobalSettings` never seeds `adb_enabled`. So the framework path — the one the
+vendor's gadget HAL listens to — stays off regardless of `ro.debuggable`. Checking this
+against real code rather than assuming AOSP behaviour is the only reason it was caught.
+
+Two further blockers, both confirmed against the dump:
+
+- Every `start adbd` trigger in `init.usb.rc` / `init.usb.configfs.rc` requires
+  `sys.usb.configfs` to be `0` or `1`. The vendor HAL sets it to **`2`**, so none can fire.
+- **Nothing in this build sets `sys.usb.controller`** — it is only ever read, and there is no
+  `ro.boot.usbcontroller` → `sys.usb.controller` mapping in `init.rc`. Without it the
+  `write /config/usb_gadget/g1/UDC ${sys.usb.controller}` step writes an empty string and the
+  gadget never binds.
+
+### The patch
+
+Six edits, all byte-length preserving, all inside `super`. `build.prop` and the vendor
+`.rc` both happen to be stored **uncompressed** in EROFS, so no filesystem rebuild is needed —
+which matters, because rebuilding EROFS off-device would destroy every SELinux label.
+
+| Edit | Purpose |
+|---|---|
+| `setprop sys.usb.configfs 2` → `1` | lets the stock adb triggers fire |
+| `persist.sys.usb.config=adb` (into a `####` comment line) | sets `sys.usb.config=adb` at boot |
+| `sys.usb.controller=sunxi_usb_udc` (into a `####` comment line) | so the gadget can bind the UDC |
+| `ro.adb.secure=1` → `0` (×2) | no auth key needed |
+| `ro.debuggable=0` → `1` | root shell; also spawns a root console on the debug UART |
+
+Properties are *added* by overwriting 36-byte `####################################` comment
+lines with a real property plus a shorter comment — same 36 bytes, so every offset in the
+image is unchanged.
+
+`tools/gaime_shell_patch.py` computes this against a dump of the device's own super and emits
+a sector-level plan plus the original bytes of every touched sector. Result:
+
+```
+3 sector(s) to write (1536 bytes):
+  super sector    710825 -> FES sector  1301673  (63 bytes differ)
+  super sector    710831 -> FES sector  1301679  ( 1 byte  differs)
+  super sector   1611180 -> FES sector  2202028  ( 1 byte  differs)
+```
+
+### The writer
+
+`tools/gaime_fes_write.py` is the only tool here that writes to the device, and is scoped hard:
+
+- the sole write opcode is `FES_DOWNLOAD` (0x206); `FES_FORCE_ERASE` (0x220) and
+  `FES_FORCE_ERASE_KEY` (0x221) are not defined in the file at all;
+- the `mbr` (0x7F01) and `erase` (0x7F04) tags are explicitly refused — the mbr tag makes the
+  device erase;
+- only whole 512-byte sectors named in the plan are written; any other payload size is refused;
+- before writing, each sector must currently match either the recorded original or the
+  recorded patched content — anything else aborts rather than overwriting the unexpected;
+- every sector is read back and compared after writing, aborting on the first mismatch;
+- `revert` restores the originals, `verify` reports which state each sector is in.
+
+### Residual uncertainty
+
+`sunxi_usb_udc` is the best reading of the UDC name (the string in the kernel; the DT node is
+`udc-controller@4100000`). Forcing `configfs=1` may also contend with the vendor HAL, which
+expects to own gadget composition. If either is wrong, adb simply will not appear — nothing
+breaks, and `revert` puts all three sectors back byte-exactly.
