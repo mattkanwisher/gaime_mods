@@ -15,9 +15,18 @@
 #   tools/uart_capture.sh list
 #   tools/uart_capture.sh scan                       # try common baud rates
 #   tools/uart_capture.sh read 115200 work/boot.log  # capture until Ctrl-C
+#
+# NOTE ON macOS: termios settings on /dev/cu.* are discarded as soon as the last
+# file descriptor closes. Running `stty` and then `cat` as two separate processes
+# silently reverts to 9600 baud. Everything below therefore holds the port open on
+# fd 3 across both the stty and the read.
+#
+# A plain CP2102 tops out at 1 Mbaud, so the 1500000 entry below will not work on
+# one. If the console turns out to run that fast, use a CP2102N, FT232H or CH343.
 set -uo pipefail
 
 BAUDS=(115200 1500000 921600 460800 230400 57600 38400 9600)
+SCAN_SECONDS=4
 
 find_ports() {
     ls /dev/cu.usbserial* /dev/cu.usbmodem* /dev/cu.SLAB* /dev/cu.wchusbserial* \
@@ -35,7 +44,20 @@ pick_port() {
     echo "$p"
 }
 
-configure() { stty -f "$1" "$2" cs8 -cstopb -parenb raw -echo 2>/dev/null; }
+# Read from $1 at baud $2 for $3 seconds into file $4, holding the port open so
+# the termios settings survive.
+grab() {
+    local port="$1" baud="$2" secs="$3" out="$4"
+    (
+        exec 3<>"$port" || exit 1
+        stty -f "$port" "$baud" cs8 -cstopb -parenb raw -echo 2>/dev/null || exit 2
+        cat <&3 > "$out" &
+        local catpid=$!
+        sleep "$secs"
+        kill "$catpid" 2>/dev/null
+        wait "$catpid" 2>/dev/null
+    )
+}
 
 # Fraction of bytes that look like console text. Garbage => wrong baud.
 printable_ratio() {
@@ -43,7 +65,7 @@ printable_ratio() {
 import sys
 d = sys.stdin.buffer.read()
 if not d:
-    print("0 0"); raise SystemExit
+    print("0.000 0"); raise SystemExit
 ok = sum(1 for b in d if 0x20 <= b <= 0x7e or b in (9, 10, 13))
 print(f"{ok/len(d):.3f} {len(d)}")'
 }
@@ -51,27 +73,34 @@ print(f"{ok/len(d):.3f} {len(d)}")'
 case "${1:-read}" in
 list)
     found=$(find_ports)
-    [ -n "$found" ] && echo "$found" | sed 's/^/  /' || echo "  (none)"
+    if [ -n "$found" ]; then
+        echo "$found" | while read -r p; do echo "  $p"; done
+    else
+        echo "  (none)"
+    fi
     ;;
 
 scan)
     PORT="${2:-$(pick_port)}"
     echo "scanning $PORT — power-cycle the gun repeatedly while this runs" >&2
     echo >&2
-    best_baud=""; best_score=0
+    best_baud=""; best_ratio=0
     for b in "${BAUDS[@]}"; do
-        configure "$PORT" "$b" || { echo "cannot configure $PORT at $b" >&2; continue; }
         raw=$(mktemp)
-        ( cat "$PORT" > "$raw" & echo $! > "$raw.pid"; sleep 4; kill "$(cat "$raw.pid")" 2>/dev/null )
+        grab "$PORT" "$b" "$SCAN_SECONDS" "$raw"
+        case $? in
+          1) echo "  cannot open $PORT" >&2; rm -f "$raw"; exit 1 ;;
+          2) printf "  %8s  unsupported by this adapter\n" "$b" >&2; rm -f "$raw"; continue ;;
+        esac
         read -r ratio bytes < <(printable_ratio < "$raw")
         note=""
         awk -v r="$ratio" -v n="$bytes" 'BEGIN{exit !(r>0.85 && n>32)}' && note="   <-- looks like text"
-        printf "  %8s  %6s bytes  printable %5.1f%%%s\n" "$b" "$bytes" \
-               "$(awk -v r="$ratio" 'BEGIN{print r*100}')" "$note" >&2
-        if awk -v r="$ratio" -v n="$bytes" -v br="$best_score" 'BEGIN{exit !(n>32 && r>br)}'; then
-            best_score=$ratio; best_baud=$b; cp "$raw" /tmp/uart_best.bin
+        printf "  %8s  %6s bytes  printable %5.1f%%%s\n" \
+               "$b" "$bytes" "$(awk -v r="$ratio" 'BEGIN{print r*100}')" "$note" >&2
+        if awk -v r="$ratio" -v n="$bytes" -v br="$best_ratio" 'BEGIN{exit !(n>32 && r>br)}'; then
+            best_ratio=$ratio; best_baud=$b; cp "$raw" /tmp/uart_best.bin
         fi
-        rm -f "$raw" "$raw.pid"
+        rm -f "$raw"
     done
     echo >&2
     if [ -z "$best_baud" ]; then
@@ -94,18 +123,16 @@ read)
     BAUD="${2:-115200}"
     OUT="${3:-}"
     PORT="$(pick_port)"
-    configure "$PORT" "$BAUD" || { echo "cannot configure $PORT at $BAUD" >&2; exit 1; }
+    [ -n "$OUT" ] && mkdir -p "$(dirname "$OUT")"
     echo "reading $PORT at $BAUD — power-cycle the gun now. Ctrl-C to stop." >&2
-    if [ -n "$OUT" ]; then
-        mkdir -p "$(dirname "$OUT")"
-        cat "$PORT" | tee "$OUT"
-    else
-        cat "$PORT"
-    fi
+    exec 3<>"$PORT" || { echo "cannot open $PORT" >&2; exit 1; }
+    stty -f "$PORT" "$BAUD" cs8 -cstopb -parenb raw -echo 2>/dev/null \
+        || { echo "adapter will not do $BAUD" >&2; exit 1; }
+    if [ -n "$OUT" ]; then cat <&3 | tee "$OUT"; else cat <&3; fi
     ;;
 
 *)
-    sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
     exit 1
     ;;
 esac

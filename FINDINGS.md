@@ -86,6 +86,15 @@ Partition layout is stock modern Android: 27 partitions, A/B slots, AVB
   author `AWA1746`). The unsigned kernel driver is Allwinner's `usbdrv.sys`.
 - FEL/efex USB IDs: **VID `0x1f3a` / PID `0x1000`** (from `LiveSuit.cfg`).
 
+- **Loader entry sequence:** hold the pinhole *Programming* button on the console, then
+  insert USB-C into the **POWER PORT** (rear power jack is USB-C data). Release after
+  ~5 s. The rear jack doubling as data was the correct hypothesis.
+- `GAIMEUpdater.exe` decrypts the `.dat` to a plain `.img` in
+  `%LOCALAPPDATA%\GAIMEUpdater\temp_firmware\<guid>.img`, then hands it to PhoenixSuit.
+  A leftover dev path in `PhoenixPro.cfg` (`C:\Users\Ian\...`) exposed this.
+- ODM is **Dashine** — build path `D:\Dashine\New Products\Lightgun\Firmware\GaimeBox_Burn_Tools\`,
+  and every app package is `com.dashine.*`.
+
 ### FEL mode confirmed on hardware
 
 The console was observed in FEL mode as **`0x1f3a:0xefe8`** (USB full speed, 300 mA) — the
@@ -112,14 +121,6 @@ PKG_CONFIG_PATH="$(brew --prefix libusb)/lib/pkgconfig" make sunxi-fel
 
 Note this is the **console**, not the gun. The gun's main IC is a ~96-pin QFN (§10) and cannot be
 an A523, which is a large BGA octa-core Cortex-A55.
-- **Loader entry sequence:** hold the pinhole *Programming* button on the console, then
-  insert USB-C into the **POWER PORT** (rear power jack is USB-C data). Release after
-  ~5 s. The rear jack doubling as data was the correct hypothesis.
-- `GAIMEUpdater.exe` decrypts the `.dat` to a plain `.img` in
-  `%LOCALAPPDATA%\GAIMEUpdater\temp_firmware\<guid>.img`, then hands it to PhoenixSuit.
-  A leftover dev path in `PhoenixPro.cfg` (`C:\Users\Ian\...`) exposed this.
-- ODM is **Dashine** — build path `D:\Dashine\New Products\Lightgun\Firmware\GaimeBox_Burn_Tools\`,
-  and every app package is `com.dashine.*`.
 
 ## 3. The GAIMEENC container (broken)
 
@@ -913,15 +914,29 @@ Board outline measures roughly **90 × 45 mm** against the cutting mat.
 (sold as a "USB-UART bridge" or "FTDI cable"). CP2102, FT232RL and CH340 all work on current macOS
 without installing anything.
 
-**Check what the board actually is, not what it says.** A module silkscreened `CP2102 MODULES` was
-enumerated by macOS as **`0x1a86:0x7523` — a WCH CH340**, not Silicon Labs (which would be
-`0x10c4`). Cheap modules are frequently mismarked. It worked fine and created
-`/dev/cu.usbserial-11230` with no driver install, so the mislabelling is cosmetic — but it changes
-the logic-level question below, and it means `system_profiler SPUSBDataType` is worth a look before
-trusting the silkscreen.
+**Verified working on hardware.** A red `CP2102 MODULES / USB TO TTL` board is a **genuine
+Silicon Labs CP2102** — macOS enumerates it as `0x10c4:0xea60`, "CP2102 USB to UART Bridge
+Controller", Silicon Labs, serial `0001`, 100 mA, and creates `/dev/cu.usbserial-0001` with no
+driver install. `stty` configures it fine.
 
-**Logic levels.** On these red CH340 boards the chip is usually powered from USB 5 V and its TX/RX
-idle at 5 V, whereas a CP2102 idles at 3.3 V. For **read-only** capture this does not matter at all:
+*(An earlier note here claimed this board was a mislabelled CH340. That was wrong — a `0x1a86:0x7523`
+CH340 was separately present on the bus at the time and got conflated with it. Both work; check
+`system_profiler SPUSBDataType` if you have several adapters around.)*
+
+**Two macOS gotchas worth knowing before you waste an evening:**
+
+1. **termios settings evaporate when the port closes.** Running `stty -f /dev/cu.X 115200` and then
+   `cat /dev/cu.X` as two separate processes silently reverts to **9600 baud** — verified: a re-open
+   right after setting 115200 reports `speed 9600 baud`. The port must be held open on a file
+   descriptor across both the `stty` and the read. `tools/uart_capture.sh` does this; a naive
+   `stty && cat` one-liner does not, and will hand you garbage that looks like a wiring fault.
+2. **A plain CP2102 tops out at 1 Mbaud.** The scan confirms this: `1500000` comes back
+   "unsupported by this adapter" while 921600 and below configure cleanly. If the gun's console
+   turns out to run at 1.5 Mbaud you need a CP2102N, FT232H or CH343.
+
+**Logic levels.** A CP2102 idles its TX/RX at **3.3 V**, which is exactly what `J3` advertises, so
+the board in hand is already correct. Many CH340 boards instead run from USB 5 V and idle at 5 V, so
+if you swap adapters, re-check. For **read-only** capture none of this matters at all:
 the gun drives the line and the adapter only listens, and a 3.3 V signal is comfortably above a
 5 V-tolerant input's logic-high threshold. It matters only if the adapter's TXD is ever connected to
 the gun's RX. Before doing that, measure TXD to GND while idle — ~3.3 V is fine, ~5 V needs a level
