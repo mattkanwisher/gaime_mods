@@ -14,7 +14,7 @@
 //
 // Build:  swiftc -O -swift-version 5 -o work/gun_bridge tools/gun_bridge.swift
 // Usage:  work/gun_bridge --log
-//         work/gun_bridge --app RetroArch [--latch-ms 60] [--require-in-range]
+//         work/gun_bridge --app RetroArch [--latch-ms 60] [--median 5] [--max-jump 400]
 //         work/gun_bridge --block
 //
 // Needs Input Monitoring permission for the host process to seize the device.
