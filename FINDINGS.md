@@ -554,6 +554,115 @@ nearly empty — the "Product Specifics" tab is an unpopulated Wix tab with noth
 
 ---
 
+## 10. Modifying the firmware — ADB is reachable, and the boot chain is unverified
+
+The console's boot chain performs **no verification at any stage**, so a modified image is
+accepted as readily as a stock one:
+
+| Check | State |
+|---|---|
+| Secure boot fuse | `secure enable bit: 0` in the factory U-Boot log — not fused |
+| AVB | vbmeta flags `0x00000000`, and the word "avb" appears **zero** times in the whole factory boot log |
+| dm-verity | fstab has **no `avb=` and no `verify` flag** on system, vendor, product or the dlkm partitions |
+| Kernel cmdline | no `androidboot.vbmeta.*`, no `dm=`, no `verifiedbootstate` |
+
+The only integrity check anywhere is the `V*.fex` members, and those are trivial: **a 32-bit
+little-endian sum of the partition's 32-bit words**. Confirmed against `vbmeta.fex`, `boot.fex`,
+`dtbo.fex` and `super.fex` — all four match their stored `V*` value exactly. The flasher checks
+it, so it has to be recomputed after any edit, but it is not a cryptographic barrier.
+
+### Why adbd is off, precisely
+
+`adbd` already ships in the image (the stock `com.android.adbd` APEX) — nothing needs adding.
+It is off for two independent reasons:
+
+1. `ro.debuggable=0`, `ro.adb.secure=1`, `ro.secure=1` in `/system/build.prop`.
+2. Every `start adbd` trigger in `init.usb.rc` / `init.usb.configfs.rc` is gated on
+   `sys.usb.configfs` being `0` or `1`, but the vendor HAL sets it to **`2`** — so on this
+   device *no init trigger can ever start adbd*. Composition is delegated to
+   `/vendor/bin/hw/android.hardware.usb.gadget@1.2-service.aw`, which is driven by the
+   framework. In Kiosk mode there is no Settings UI to ask it.
+
+That HAL does implement the path — it contains `setCurrentUsbFunctions Adb`, `ffs.adb`,
+`/dev/usb-ffs/adb/ep1`, `/sys/class/udc/` and writes `/config/usb_gadget/g1/UDC`. The vendor rc
+already creates `functions/ffs.adb` and mounts functionfs at boot. So the machinery is all
+present and merely never asked to run.
+
+The rear USB-C port is wired as a **device** port (`usb_port_type = <0x00>` on `usbc0`,
+`udc-controller@4100000`, `allwinner,sunxi-udc`), which is why FEL works there — and it means
+ADB-over-USB is physically possible on the same port. FEL flashing already runs the console off
+PC USB power, so powering it from a host is proven.
+
+### The patch
+
+`tools/gaime_patch.py`. Every edit is **byte-length preserving**, which is the whole trick:
+`/system/build.prop` happens to be stored *uncompressed* in the system EROFS, so it can be
+edited in place with no filesystem rebuild, no re-sparsing and no IMAGEWTY re-layout. That
+matters a lot — rebuilding the EROFS off-device would lose every SELinux label and every
+uid/gid and produce an unbootable system.
+
+```
+ro.secure=1     -> ro.secure=0
+ro.adb.secure=1 -> ro.adb.secure=0   (both occurrences)
+ro.debuggable=0 -> ro.debuggable=1
+'####…' (36 B)  -> 'persist.sys.usb.config=adb\n#########'   (also exactly 36 B)
+```
+
+The last one is the interesting one: a 36-byte comment line is overwritten with a real property
+plus a shorter comment, so a property is *added* without changing a single offset. Vsuper is
+then recomputed.
+
+Bonus from `ro.debuggable=1`: the image contains `on property:ro.debuggable=1` →
+`service console /system/bin/sh`, so this also spawns a **root shell on the debug UART**
+(PB09/PB10, 115200) for anyone who opens the case.
+
+### Verification performed
+
+- Patched image unpacks cleanly through the full chain (IMAGEWTY → sparse → LP → EROFS).
+- `build.prop` reads back exactly as intended.
+- **Exactly one file differs out of 3251** in the system partition: `system/build.prop`.
+- `tools/gaime_encrypt.py` re-encrypting the *unmodified* image with the original nonce
+  reproduces the stock `d8a21f90.dat` **byte for byte** (same SHA-256) — proof the container
+  is fully understood and that the vendor updater will accept our output.
+- Patched `.dat` decrypts back to the patched `.img` bit-exactly.
+
+```bash
+python3 tools/gaime_decrypt.py <sku>.dat -o work
+python3 tools/gaime_patch.py   work/<sku>.img -o work/<sku>_adb.img
+python3 tools/gaime_encrypt.py work/<sku>_adb.img work/<sku>_adb.dat
+```
+
+Then replace the matching `.dat` in `GAIMEUpdater_v4.0.3/GAIME_Tools/Firmware/4.0.3/` and flash
+with the stock Windows updater — filenames and sizes are unchanged, so it needs no other edits.
+
+### What is NOT verified
+
+**None of this has been flashed.** Specifically unproven:
+
+- That `ro.debuggable=1` + `persist.sys.usb.config=adb` is enough to make the framework ask the
+  gadget HAL for adb. This is the biggest unknown — the HAL supports it, but the trigger path
+  runs through `UsbDeviceManager`/`Settings.Global.ADB_ENABLED`, which is seeded from
+  `ro.debuggable` on a wiped `/data`. If it does not fire, the fallback is adding an init `.rc`
+  with `sys.usb.configfs=2` triggers, which needs a real (SELinux-label-preserving) EROFS rebuild.
+- That `Vsuper` is the *only* thing the flasher validates.
+- SELinux stays enforcing (`user` build compiles out `androidboot.selinux=permissive`), so
+  `adb shell` should work in the `shell` domain but `adb root` may not — the `su` domain is
+  typically absent from user-build policy.
+
+**Recovery:** flashing is FEL via the SoC boot ROM, which lives in silicon and is entered with
+the pinhole button, so a bad system image is recoverable rather than a brick. All three stock
+`.dat` files are public and re-flashable with the same tool.
+
+### SSH
+
+Not worth doing in the image. Adding an `sshd`/dropbear binary means new files, which means a
+real EROFS rebuild with correct SELinux contexts — the one thing this patch carefully avoids.
+There is also **no network hardware** on the console. The far better route is to get adb first,
+then `adb push` a static dropbear into `/data` (writable, no rebuild) and reach it over USB
+networking — the vendor rc already creates an `ncm.gs6` (USB ethernet) gadget function.
+
+---
+
 ## Open questions remaining
 
 - Trigger-pull jitter: not yet characterised on our unit, but now confirmed reproducible by an

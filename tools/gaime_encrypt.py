@@ -71,6 +71,10 @@ def main() -> None:
             chunk_size = struct.unpack("<i", f.read(4))[0]
             nonce = f.read(12)
         print(f"reusing nonce {nonce.hex()} and chunk size {chunk_size} from {args.like.name}")
+        print("WARNING: --like is only correct when re-encrypting the *identical* payload,\n"
+              "         e.g. to prove this tool reproduces a stock package byte for byte.\n"
+              "         Reusing a nonce across different plaintexts breaks AES-GCM.",
+              file=sys.stderr)
 
     encrypt(args.image, args.output, nonce, chunk_size)
 

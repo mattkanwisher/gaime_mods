@@ -20,6 +20,7 @@ the partition's 32-bit words; the flasher checks them, so a stale one fails the 
 """
 
 import argparse
+import mmap
 import shutil
 import struct
 import sys
@@ -55,33 +56,23 @@ def items(fh):
     return out
 
 
-def wordsum(fh, offset, length):
-    fh.seek(offset)
-    total, remaining = 0, length
-    while remaining:
-        blk = fh.read(min(1 << 22, remaining))
-        if not blk:
-            break
-        remaining -= len(blk)
-        n = len(blk) // 4 * 4
-        total = (total + sum(struct.unpack(f"<{n // 4}I", blk[:n]))) & 0xFFFFFFFF
-    return total
+def wordsum(mm, offset, length):
+    """Sum of the region's little-endian 32-bit words, mod 2^32."""
+    total = 0
+    end = offset + (length // 4) * 4
+    for pos in range(offset, end, 1 << 22):
+        blk = mm[pos:min(pos + (1 << 22), end)]
+        total += sum(struct.unpack(f"<{len(blk) // 4}I", blk))
+    return total & 0xFFFFFFFF
 
 
-def find_all(fh, needle, start, length):
-    """Offsets of needle within [start, start+length), streamed."""
-    hits, pos, overlap = [], start, len(needle) - 1
-    end = start + length
-    while pos < end:
-        fh.seek(pos)
-        blk = fh.read(min(1 << 24, end - pos))
-        if not blk:
-            break
-        i = blk.find(needle)
-        while i != -1:
-            hits.append(pos + i)
-            i = blk.find(needle, i + 1)
-        pos += len(blk) - overlap
+def find_all(mm, needle, start, length):
+    """Every offset of needle within [start, start+length)."""
+    hits, end = [], start + length
+    i = mm.find(needle, start, end)
+    while i != -1:
+        hits.append(i)
+        i = mm.find(needle, i + 1, end)
     return hits
 
 
@@ -106,40 +97,42 @@ def main() -> None:
         sup, vsup = table["super.fex"], table["Vsuper.fex"]
         print(f"super.fex  offset={sup['offset']} length={sup['length']}")
 
-        before = wordsum(fh, sup["offset"], sup["length"])
-        print(f"Vsuper before: 0x{before:08x}")
-        fh.seek(vsup["offset"])
-        stored = struct.unpack("<I", fh.read(4))[0]
-        if stored != before:
-            sys.exit(f"Vsuper mismatch (stored 0x{stored:08x}) — image already altered?")
+        mm = mmap.mmap(fh.fileno(), 0)
+        try:
+            before = wordsum(mm, sup["offset"], sup["length"])
+            stored = struct.unpack_from("<I", mm, vsup["offset"])[0]
+            print(f"Vsuper before: 0x{before:08x} (stored 0x{stored:08x})")
+            if stored != before:
+                sys.exit("Vsuper mismatch — image already altered?")
 
-        for old, new, expect in PATCHES:
-            hits = find_all(fh, old, sup["offset"], sup["length"])
-            if expect is not None and len(hits) != expect:
-                sys.exit(f"{old!r}: expected {expect} occurrence(s), found {len(hits)}")
-            if not hits:
-                sys.exit(f"{old!r}: not found")
-            for off in hits:
-                fh.seek(off)
-                fh.write(new)
-            print(f"  {old.decode():18s} -> {new.decode():18s} at "
-                  f"{', '.join(hex(h) for h in hits)}")
+            applied = {}
+            for old, new, expect in PATCHES:
+                hits = find_all(mm, old, sup["offset"], sup["length"])
+                if expect is not None and len(hits) != expect:
+                    sys.exit(f"{old!r}: expected {expect} occurrence(s), found {len(hits)}")
+                if not hits:
+                    sys.exit(f"{old!r}: not found")
+                for off in hits:
+                    mm[off:off + len(new)] = new
+                applied[old] = hits
+                print(f"  {old.decode():18s} -> {new.decode():18s} at "
+                      f"{', '.join(hex(h) for h in hits)}")
 
-        # Anchor the property insert on the (now unique) patched ro.debuggable line so we
-        # can only ever land inside this build.prop.
-        anchor = find_all(fh, b"ro.debuggable=1", sup["offset"], sup["length"])[0]
-        window = 4096
-        spot = find_all(fh, COMMENT, anchor, window)
-        if not spot:
-            sys.exit("no 36-byte '####' comment line within 4 KiB after ro.debuggable")
-        fh.seek(spot[0])
-        fh.write(ADB_PROP)
-        print(f"  {'insert adb prop':18s} -> {'persist.sys.usb.config=adb':18s} at {hex(spot[0])}")
+            # Anchor on the offset we just patched. Re-searching for "ro.debuggable=1"
+            # would instead hit `on property:ro.debuggable=1` inside an init .rc file.
+            anchor = applied[b"ro.debuggable=0"][0]
+            spot = find_all(mm, COMMENT, anchor, 4096)
+            if not spot:
+                sys.exit("no 36-byte '####' comment line within 4 KiB after ro.debuggable")
+            mm[spot[0]:spot[0] + len(ADB_PROP)] = ADB_PROP
+            print(f"  {'add adb prop':18s} -> {'persist.sys.usb.config=adb':18s} at {hex(spot[0])}")
 
-        after = wordsum(fh, sup["offset"], sup["length"])
-        fh.seek(vsup["offset"])
-        fh.write(struct.pack("<I", after))
-        print(f"Vsuper after:  0x{after:08x}  (written to offset {vsup['offset']})")
+            after = wordsum(mm, sup["offset"], sup["length"])
+            struct.pack_into("<I", mm, vsup["offset"], after)
+            print(f"Vsuper after:  0x{after:08x}  (written at {vsup['offset']})")
+            mm.flush()
+        finally:
+            mm.close()
 
     print(f"\npatched: {target}")
 
