@@ -1858,3 +1858,47 @@ composition.
   the pristine config back over the **HID OTA channel** and rebooting that way is
   what reverted the whole experiment without touching the degraded serial line —
   a good demonstration that the OTA path is a real independent control channel.
+
+### Resolution: permanent USB storage DOES work — it was the device descriptor, not endpoints
+
+The §23 MSC failure was misdiagnosed as an endpoint limit. The real cause: the
+vendor's `usb_gadget.sh` sets the composite **IAD device descriptor**
+(`bDeviceClass=0xEF / 0x02 / 0x01`) *only inside its UVC branch*. Drop UVC and
+`bDeviceClass` stays `0x00`, so a modern host cannot resolve the multi-interface
+device (HID x3 + MSC) and enumeration stalls at **"addressed"** — no HID, no MSC,
+no disk. The earlier runtime dump (§17) worked only because it kept the UVC-era
+descriptor.
+
+Fix: re-set the IAD descriptor when UVC is absent. Folded into a modified
+`g_msc.sh` (runs before the UDC bind), so no other file changes. Result, verified:
+
+```
+gun:  udc=configured  class=0xef  c1=[hid.1 hid.2 hid.3 mass_storage.0]  gun running
+Mac:  /dev/disk24  83,091,456 bytes  GPT, 5 partitions  read-only removable
+      diskutil mount readOnly disk24s4 -> "NO NAME" mounts, real data
+      HID still answers (fw_ver v2.5.1) -> the light gun still works
+```
+
+So the gun **can** permanently expose read-only USB storage across reboots while
+still functioning as a light gun. The recipe is in `mods/gun-usb-storage/`.
+
+**A macOS gotcha learned mid-experiment:** repeated reboots into a broken
+"addressed" config leave macOS holding a stale device object, so even a
+subsequently-correct config won't enumerate (`gun not found`) until the USB cable
+is **physically unplugged and replugged**. A software UDC unbind/rebind does not
+clear it. Budget one physical replug after any run of failed enumerations.
+
+### On disabling the UVC video feed (answering "does anything use it")
+
+The USB video interface streams a **synthetic test pattern**, not the camera
+(§7): every row uniform, a ramp scrolling 1.6 rows/frame, zero sensor noise. The
+real CV runs internally in `gun` on the ISP (`/dev/video3`); the `uvc.0` gadget
+is separate and **nothing in the console consumes it** — no video code anywhere.
+It reads as a factory/bring-up leftover.
+
+Dropping it (`CFG_UVC_ENABLE=0`) is therefore safe for the gun's own operation —
+confirmed: with UVC off, `gun` still runs and HID aiming still answers. The only
+requirements are (a) restore the IAD `bDeviceClass` the UVC branch used to set,
+as above, and (b) it is **untested** whether the G'AIM'E console requires the gun
+to advertise a UVC interface during accessory detection — that needs the console
+hardware to check.
