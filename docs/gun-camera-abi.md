@@ -95,3 +95,54 @@ detection thread (prctl name "gaime_det", FUN_00015d34):
 Assessment: the ABI is reversed and the path is clear, but a working bridge is a
 multi-session effort — three undocumented library ABIs, a frame layout the
 decompiler won't hand over cleanly, and a camera pipeline that reboots on error.
+
+## Milestone 1 result: the video_stream ABI is correct, but not sufficient
+
+`tools/cam_grab.c` — a `dlopen("libvideo.so")` tool that runs the reversed init
+sequence and installs a SIGSEGV-guarded frame callback to dump the frame struct —
+was cross-compiled and run on the device (with `gun` stopped so the camera was
+free). Output:
+
+```
+create -> 0x16618
+set_camera_source(/dev/video3) -> 0
+set_res -> 0
+set_src_para(224x224@60) -> 0
+set_rotate -> 0
+start_camera -> -2147479552          # 0x80001000, error
+set_frame_cb -> 0
+got 0 frames
+```
+
+So **the ABI is right** — `create`, `set_camera_source("/dev/video3")`, `set_res`,
+`set_src_para`, `set_rotate` all succeed. But **`start_camera` fails with
+`0x80001000`**, and the console prints `sensor h63p_mipi power state is already
+0!` — the sensor never powers on.
+
+This reproduces on a **clean boot with `gun` moved aside** (so a dirty ISP from
+gun's earlier SIGKILL is ruled out), so it is not a stale-state problem.
+`gun` itself restarts and streams fine, so the camera hardware works — which
+means the bring-up needs **more than the `video_stream` API**: the sensor
+power/i2c sequencing and ISP/omx/axvu subsystem init that `gun`'s `main` performs
+through `libcampan` / `libomx*` / `/dev/axvu_dev` before it ever calls
+`video_stream_start_camera`. `gun.c` shows no extra `video_stream_*` calls, so the
+missing init is in those other libraries, not the video_stream layer.
+
+### Reboot behaviour, clarified
+
+Killing `gun` with SIGKILL and **not** restarting it does **not** reboot the box
+(uptime kept climbing). The earlier reboot was caused by starting a *second* `gun`
+while the first was dying (two openers of the exclusive camera). `gun` ignores
+SIGTERM. So the safe pattern is: `kill -9 gun` once, run the experiment, then
+`/app/bin/gun &` exactly once — or disable autostart (`mv /app/bin/gun aside`) and
+reboot for a truly clean ISP.
+
+### Verdict on Route 1
+
+The `video_stream` ABI is fully reversed and replicable, but a standalone camera
+bring-up is blocked at `start_camera` by subsystem init that lives in the vendor's
+higher-level libraries (`libcampan` + `libomx*` + `axvu`). Reproducing that is a
+substantially larger reverse-engineering effort than the video_stream layer, and
+the realistic shortcut is the other direction entirely: **inject into `gun`'s own
+process** (LD_PRELOAD a shim, or patch it) to tap the frames it already has,
+rather than bringing the camera up ourselves. Left here as a documented result.
