@@ -42,9 +42,13 @@ echo "== sign =="
 # a fresh key each build makes `adb install -r` fail with
 # INSTALL_FAILED_UPDATE_INCOMPATIBLE.
 KS="$HERE/debug.keystore"
-keytool -genkeypair -keystore "$KS" -storepass android -keypass android \
-    -alias gaime -keyalg RSA -keysize 2048 -validity 10000 \
-    -dname "CN=GAIME Explorer, O=gaime_mods, C=GB" >/dev/null 2>&1
+# Only create the key once; with set -e, keytool failing because the alias
+# already exists would abort the whole build.
+if [ ! -f "$KS" ]; then
+    keytool -genkeypair -keystore "$KS" -storepass android -keypass android \
+        -alias gaime -keyalg RSA -keysize 2048 -validity 10000 \
+        -dname "CN=GAIME, O=gaime_mods, C=GB" >/dev/null 2>&1
+fi
 
 "$BT/zipalign" -f 4 "$OUT/unsigned.apk" "$OUT/aligned.apk"
 "$BT/apksigner" sign \

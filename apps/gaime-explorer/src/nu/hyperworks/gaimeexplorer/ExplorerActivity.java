@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -129,7 +130,23 @@ public class ExplorerActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         setContentView(root);
 
+        // This console ships with no visible mouse cursor — presumably deliberate,
+        // since the light gun games draw their own crosshair and a stray arrow
+        // would be wrong on screen. Requesting an explicit pointer icon per-view
+        // overrides that for our own windows.
+        forceArrowCursor(root);
+        forceArrowCursor(list);
+        forceArrowCursor(modeButton);
+
         showDir(new File("/"));
+    }
+
+    private void forceArrowCursor(View v) {
+        try {
+            v.setPointerIcon(PointerIcon.getSystemIcon(this, PointerIcon.TYPE_ARROW));
+        } catch (Exception e) {
+            // older/odd builds may not carry the pointer resources at all
+        }
     }
 
     private void toggleMode() {
