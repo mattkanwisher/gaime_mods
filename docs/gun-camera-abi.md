@@ -146,3 +146,46 @@ substantially larger reverse-engineering effort than the video_stream layer, and
 the realistic shortcut is the other direction entirely: **inject into `gun`'s own
 process** (LD_PRELOAD a shim, or patch it) to tap the frames it already has,
 rather than bringing the camera up ourselves. Left here as a documented result.
+
+## Milestone 2: the LD_PRELOAD frame tap — built, correct, blocked on hardware
+
+Since standalone bring-up fails, `tools/frame_tap.c` rides inside gun instead: an
+LD_PRELOAD shim that intercepts `video_stream_set_frame_cb`, swaps gun's frame
+callback for a wrapper that copies the frame (SIGSEGV-guarded struct dump + saves
+the pixel buffer at the detected offset), then forwards to gun's original. No
+sensor bring-up needed — gun already did it.
+
+Deployed via a launch wrapper (`/app/bin/gun` -> `env LD_PRELOAD=/app/frame_tap.so
+/app/bin/gun.real`). **Verified: frame_tap.so loads into gun's process**
+(`frame_tap` present in `/proc/$(pidof gun.real)/maps`), and gun imports
+`video_stream_set_frame_cb` as an undefined symbol with `libvideo.so` in its
+`DT_NEEDED`, so the interposition is sound.
+
+But the tap never fires, and the reason is **hardware**: the camera sensor is not
+responding. During gun's bring-up the console shows
+
+```
+[I2C] i2c-3 ... device addr: 0x40 ... no ask for the 7bit address   (NAK)
+[h63p_mipi] sensor_detect:196 err: id_hi =0
+viss_pipeline_s_power:230 err: pipeline sd [0] h63p_mipi s_power on failed
+```
+
+i2c-3 addresses `0x40` (the h63p sensor) and `0x57` (its EEPROM) both NAK
+continuously — i.e. **the barrel camera module (FPC) is disconnected** from the
+bare mainboard. With no sensor, `video_stream_start_camera` fails (`0x80001000`)
+for gun exactly as it did for `cam_grab`, gun never calls `set_frame_cb`, and the
+tap has nothing to hook.
+
+**So the frame-grab software is complete and correct; it is gated on the camera
+being physically connected.** Reconnect the barrel camera module and the tap will
+capture frames to `/app/tapframe_*.bin` (and log to `/app/tap.log`). `frame_tap.so`
+is staged on `/app`. To run it once the camera is back:
+
+```
+kill -9 $(pidof gun); sleep 1
+LD_PRELOAD=/app/frame_tap.so /app/bin/gun &        # taps as gun brings the camera up
+sleep 5; cat /app/tap.log; ls -la /app/tapframe*.bin
+```
+
+If a kill-then-restart leaves the ISP dirty (start_camera fails), use the launch
+wrapper + a clean reboot instead so gun brings the camera up fresh under the tap.
