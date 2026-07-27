@@ -1672,3 +1672,111 @@ Two other things fall out of that fd list:
   feeds the host.
 - **Eleven GPIO lines** — trigger, buttons and LEDs — plus one PWM channel for the recoil
   motor, matching `CN1`/`Motor` on the PCB (§10).
+
+## 21. OTA over USB HID — a working utility, tested with a live write
+
+The §20 protocol was turned into `tools/gun_ota.py` and exercised against the
+gun. Function-code table, from the dispatcher in `decompiled/gun.c`:
+
+```
+0x01 connect    create /app/temp_file.bin, reset state
+0x02 file_info  idx0 u16 total frames · idx2 16B MD5 · idx4 dest path
+0x03 file_data  raw payload appended to temp file  (see wire note below)
+0x04 status     idx0 state byte · idx1 recv|total · idx2 last result
+0x05 system     idx0 REBOOT · idx1 FACTORY RESET · idx2 version · idx3 clear cache
+0x06 set_info   write a system_info.json key
+0x07 get_info   read a system_info.json key
+0x08 echo
+```
+
+**Two wire shapes, not one.** Control/query frames are CRC-framed:
+
+```
+[0] func  [1] len  [2:6] index (u32 LE)  [6:6+len] payload  [..] CRC16 LE over [0,6+len)
+```
+
+but **file-data frames (0x03) are a raw fast path** — `[0x03][len][data]`, no
+index and no CRC. The dispatcher special-cases func 3 *before* `parse_frame`, so
+the bulk transfer skips CRC entirely. Max payload is **56 bytes** (`0x38`,
+enforced in `parse_frame` and `handle_file_data`), giving the 64-byte report:
+6 header + 56 + 2 CRC.
+
+### Read-only first contact (all verified live)
+
+```
+$ python3 tools/gun_ota.py status      -> transfer state = 0 (idle)
+$ python3 tools/gun_ota.py version      -> model_ver: v1.0.1, fw_ver: v2.5.1
+$ python3 tools/gun_ota.py get fw.ver   -> fw.ver = v2.5.1
+$ python3 tools/gun_ota.py get sn.num   -> sn.num = 12345
+```
+
+Every value matches `/app/system_info.json` from the dump, confirming the framing
+and CRC are correct.
+
+### The update flow, and a safety constraint from update_file
+
+`connect -> file_info(total,md5,path) -> file_data* -> (auto verify+update)`.
+When received frame count reaches the declared total, the gun runs
+`perform_verification_and_update` on its own: `md5_file` on `/app/temp_file.bin`,
+compared to the 16 bytes from file_info idx2, and on match `update_file(temp,
+dest)`.
+
+`update_file` first tries an **atomic `rename`**, but only if `stat(dest)`
+succeeds and `dest` shares a filesystem with the temp file (`st_dev` compare). If
+`dest` doesn't exist or is cross-device it falls through to a **copy-to-`dest.tmp`
+then rename** path (`FUN_0001b53c`). Consequences:
+
+- New files **can** be created (via the copy path), not only overwrites.
+- But the temp file is on `/app`, so any target must be on the **`/app`
+  filesystem** for either path to work. `gun_ota.py` refuses anything not under
+  `/app/` rather than let it fail silently on the device.
+- On success the file is `chmod 0777`.
+
+### The live write test
+
+Pushed a 55-byte file to a scratch path over USB HID, verified on the gun via the
+serial console:
+
+```
+$ python3 tools/gun_ota.py push /tmp/hack_test.txt /app/hack_test.txt
+push ... (55 B, md5 fe222e51112c1d9645be229fa996b55b) -> /app/hack_test.txt
+
+# on the gun:
+-rwxrwxrwx 1 root root 55  /app/hack_test.txt
+fe222e51112c1d9645be229fa996b55b  /app/hack_test.txt   <- gun's own md5, matches
+```
+
+`temp_file.bin` was consumed by the rename, i.e. the full flow ran. Scratch file
+removed afterward; the device was left as found.
+
+**So a firmware/asset update over USB needs no board access at all.** Opening the
+gun was only how the protocol became legible — the channel itself is the HID
+vendor interface, reachable from any host. And because the host names the
+destination path and `gun` runs as root, this is an unauthenticated
+arbitrary-file-write over USB (CRC-16 is the only check). It is the vendor's
+intended update mechanism; there is simply no gun firmware published to feed it.
+
+## 22. Rebuilding the custom binaries
+
+Full Ghidra decompilation of all five gun-specific binaries is in `decompiled/`.
+Two are reconstructed into clean, rebuildable C in `reversed/src/` — see
+`reversed/README.md` for the honest per-binary status.
+
+- **`usb_monitor`** — rebuilt and **verified on the device**. Reconstructed C ->
+  cross-compiled for ARMv7/glibc-2.25 -> pushed over serial ->
+  `LD_TRACE_LOADED_OBJECTS=1` on the gun resolves `libc.so.6 => /lib/libc.so.6`
+  and the correct interpreter, so the loader binds it. Stripped it is 9768 B vs
+  the vendor's 9788 B.
+- **`fw_upgrade`** — rebuilt (writes a BCB to `misc` + reboots; not executed on
+  hardware).
+- **`fw_ab_upgrade`, `gun`, `libnn_gaime.so`** — C++ against OpenCV/Eigen/STL;
+  kept as reference decompilation. Reconstituting compilable source is a
+  weeks-long manual effort, not a command. The reusable knowledge from `gun` is
+  the OTA protocol (§21) and the aiming pipeline (§19), both already captured.
+
+Toolchain note: the cross-compiler on macOS comes from the
+`messense/macos-cross-toolchains` tap, which Homebrew requires `brew trust`
+before installing (it runs third-party install code — a deliberate security
+gate). Ghidra's own decompiler helper also had to have `com.apple.quarantine`
+cleared (`xattr -dr`) or it dies as "Decompiler process died". Both are macOS
+Gatekeeper behaviours, not tool bugs.

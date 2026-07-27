@@ -13,3 +13,6 @@ apps/*/out/
 
 # app signing keys stay local
 apps/*/debug.keystore
+
+# reconstructed-binary build output
+reversed/out/

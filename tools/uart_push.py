@@ -52,7 +52,10 @@ def main() -> None:
 
     fd = open_port(find_port())
     try:
-        stage = "/data/local/tmp/.push.b64"
+        # Stage in the same directory as the destination — the Android console
+        # has /data/local/tmp but the gun's busybox rootfs only has /tmp, so a
+        # fixed staging path silently produces an empty file on the wrong box.
+        stage = os.path.dirname(remote.rstrip("/")) + "/.push.b64"
         cmd(fd, f"rm -f {stage} {remote}")
 
         started = time.time()
