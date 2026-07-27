@@ -8,7 +8,11 @@ and eventually a root shell and our own apps running on it.
 Everything here was done with the vendor's **publicly downloadable, unauthenticated**
 firmware, a USB cable, and a serial adapter, on hardware I own.
 
-**[Read the write-up →](docs/writeup.html)** (self-contained HTML, screenshots inlined)
+**[Read the blog post →](docs/blog.html)** — the narrative version, covering both the console
+and the gun, with the teardown photos.
+**[Read the write-up →](docs/writeup.html)** — the console-focused technical write-up.
+
+Both are self-contained HTML with images inlined.
 
 ## What's inside
 
@@ -28,7 +32,8 @@ not MAME or FBNeo — with debug hooks left in.
 
 - **[FINDINGS.md](FINDINGS.md)** — the full log, including dead ends and corrections
 - **[docs/fes-protocol.md](docs/fes-protocol.md)** — Allwinner FEL/FES wire format and opcodes
-- **[docs/writeup.html](docs/writeup.html)** — narrative version with screenshots
+- **[docs/blog.html](docs/blog.html)** — narrative post covering the console *and* the gun
+- **[docs/writeup.html](docs/writeup.html)** — console-focused write-up with screenshots
 
 Highlights:
 

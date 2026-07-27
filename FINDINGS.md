@@ -1216,3 +1216,58 @@ one for this. Recorded because the software route into it is genuinely useful to
 
 **Note:** the console is left sitting in fastboot after `adb reboot bootloader`; it does not
 print to the UART in that mode. Power-cycling returns it to Android.
+
+## 17. The missing mouse cursor — vendor-blanked-artwork theory disproved
+
+A USB mouse works on the console (first front port only — `usbc1` is EHCI/OHCI, `usbc2` is
+dwc3/xHCI with `aw,vbus-shared-quirk`, so the two front ports are not equivalent). Motion
+tracks and clicks land where aimed. **No arrow is ever drawn.**
+
+The natural theory was that the vendor blanked the pointer artwork deliberately, since the
+light gun games draw their own crosshair. **That is wrong.** From this unit's own
+`framework-res.apk` in the dump:
+
+```
+res/drawable-mdpi-v4/pointer_arrow.png        22x28,  gray+alpha, 69% non-transparent
+res/drawable-mdpi-v4/pointer_arrow_large.png  64x64,  gray+alpha, 42% non-transparent
+```
+
+Decoded and rendered as ASCII, both are a normal, fully opaque arrow. `ro.sf.lcd_density`
+is 160 (mdpi), and mdpi is the only density shipped — so the resource that would be used is
+present and intact.
+
+Runtime state is equally healthy: the mouse enumerates as `Classes: CURSOR | EXTERNAL` with
+`Cursor Input Mapper: Mode: POINTER`, `Pointer Gestures Enabled: true`, the viewport is a
+normal active `INTERNAL` 1920x1080, `cmd overlay list` shows nothing pointer-related, and
+there is no device owner.
+
+**The actual lead:** `dumpsys SurfaceFlinger --list` contains **no `Sprite` layer at all**
+(`grep -ic sprite` returns 0). AOSP's `SpriteController` creates that surface lazily, on the
+first `setVisible(true)`, so its absence means `PointerController` never made the pointer
+visible — the sprite is not hidden, it was never created. Note this proves less than it
+looks if the mouse has not been *moved* since it was plugged in; the surface is created on
+first show, not on device add. Re-check with the mouse moving:
+
+```bash
+python3 tools/uart_shell.py run 'dumpsys SurfaceFlinger --list | grep -i sprite'
+```
+
+`PointerIcon.TYPE_ARROW` was requested explicitly on the explorer's root, list and button
+(an app can override the pointer for its own windows). Installed and launched; **no visible
+change reported**. `screencap` never captures the cursor sprite, so this can only ever be
+confirmed on the TV.
+
+### Workflow caution: `adb` may not be the console
+
+The console has no network, so it is only ever an *USB* adb target, and its adb dies on
+every reboot (§15). If another Android device is on the network with wireless debugging on,
+`adb` silently retargets it. During this session `adb devices` showed only:
+
+```
+adb-<redacted>._adb-tls-connect._tcp   device   model:AYN_Thor
+```
+
+— a Snapdragon 8 Gen 2 handheld, not the A527 console. A `framework-res.apk` pulled that way
+is the wrong device's, and would have produced a confidently wrong conclusion. **Check
+`adb shell getprop ro.product.model` returns `A527 PRO` before trusting anything from adb**,
+or use the serial console, which cannot be confused for another device.

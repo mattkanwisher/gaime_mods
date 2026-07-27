@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taking apart the G'AIM'E light gun — both halves of it</title>
+<meta name="description" content="Reverse engineering a Time Crisis light gun console: a hardcoded AES key, a homemade Allwinner flasher, a root shell, and a gun that turns out to be a Linux computer.">
+<style>
+/* Dark only, deliberately — no prefers-color-scheme fallback. The subject is a
+   console that lives on a TV in a dark room, and the screenshots are all dark. */
+:root{
+  --bg:#0d1117; --panel:#161b22; --fg:#e6edf3; --dim:#9198a1; --line:#30363d;
+  --accent:#22d3ee; --warn:#f0883e; --ok:#3fb950; --quote:#a5a5ff;
+  color-scheme:dark;
+}
+
+html{box-sizing:border-box}
+*,*:before,*:after{box-sizing:inherit}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:52rem; margin:0 auto; padding:0 1.25rem 6rem}
+
+header.top{padding:4rem 0 2.5rem; border-bottom:1px solid var(--line); margin-bottom:3rem}
+h1{font-size:2.4rem; line-height:1.15; margin:0 0 1rem; letter-spacing:-.02em}
+.standfirst{font-size:1.2rem; color:var(--dim); margin:0 0 1.5rem; line-height:1.5}
+.meta{font-size:.85rem; color:var(--dim); font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.meta a{color:var(--accent)}
+
+h2{font-size:1.65rem; margin:3.5rem 0 .35rem; letter-spacing:-.01em; line-height:1.25}
+h2 .num{color:var(--accent); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+        font-size:.95rem; display:block; margin-bottom:.35rem; letter-spacing:.05em}
+h3{font-size:1.2rem; margin:2.5rem 0 .5rem; line-height:1.3}
+p{margin:1.1rem 0}
+a{color:var(--accent)}
+strong{font-weight:650}
+hr{border:0; border-top:1px solid var(--line); margin:3.5rem 0}
+
+.part{
+  margin:5rem 0 0; padding:1.5rem 0 0; border-top:2px solid var(--accent);
+}
+.part .kicker{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.8rem;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--accent)}
+.part h2{margin-top:.4rem; font-size:2rem}
+
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.875em;
+  background:var(--panel); padding:.12em .38em; border-radius:4px;
+  border:1px solid var(--line)}
+pre{background:var(--panel); border:1px solid var(--line); border-radius:8px;
+  padding:1rem 1.1rem; overflow-x:auto; font-size:.82rem; line-height:1.55; margin:1.4rem 0}
+pre code{background:none; border:0; padding:0; font-size:inherit}
+
+figure{margin:2rem 0; background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:.7rem; overflow:hidden}
+figure img{display:block; width:100%; height:auto; border-radius:6px}
+figcaption{font-size:.85rem; color:var(--dim); margin-top:.7rem; line-height:1.5;
+  padding:0 .3rem .2rem}
+
+.tablewrap{overflow-x:auto; margin:1.5rem 0; border:1px solid var(--line); border-radius:8px}
+table{border-collapse:collapse; width:100%; font-size:.9rem; min-width:28rem}
+th,td{text-align:left; padding:.6rem .8rem; border-bottom:1px solid var(--line);
+      vertical-align:top}
+th{background:var(--panel); font-weight:650; white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td code{white-space:nowrap}
+
+.callout{border-left:3px solid var(--accent); background:var(--panel);
+  padding:1rem 1.2rem; margin:1.8rem 0; border-radius:0 8px 8px 0}
+.callout.warn{border-left-color:var(--warn)}
+.callout.ok{border-left-color:var(--ok)}
+.callout p:first-child{margin-top:0}
+.callout p:last-child{margin-bottom:0}
+.callout .label{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.72rem;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--dim); display:block;
+  margin-bottom:.4rem}
+
+ul,ol{margin:1.1rem 0; padding-left:1.4rem}
+li{margin:.45rem 0}
+
+.lede::first-letter{font-size:3.1rem; line-height:.85; float:left;
+  padding:.1rem .55rem .1rem 0; font-weight:650; color:var(--accent)}
+
+.missing{color:var(--warn); font-family:ui-monospace,monospace; font-size:.85rem}
+
+footer.end{margin-top:5rem; padding-top:2rem; border-top:1px solid var(--line);
+  font-size:.9rem; color:var(--dim)}
+footer.end a{color:var(--accent)}
+
+.toc{background:var(--panel); border:1px solid var(--line); border-radius:10px;
+  padding:1.2rem 1.4rem; margin:2.5rem 0}
+.toc h4{margin:0 0 .7rem; font-size:.78rem; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--dim); font-weight:650}
+.toc ol{margin:0; padding-left:1.2rem; font-size:.93rem}
+.toc li{margin:.3rem 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>Taking apart the G'AIM'E light gun — both halves of it</h1>
+  <p class="standfirst">A ¥13,200 Time Crisis console turned out to ship a hardcoded
+  AES key, no secure boot of any kind, a licensed Namco arcade emulator, and a gun that
+  is secretly a Linux computer with its own camera and 128 MiB of flash. Here is
+  everything we found, including the bits we got wrong.</p>
+  <p class="meta">{{DATE}} · built from commit <code>{{COMMIT}}</code> ·
+  <a href="https://github.com/mattkanwisher/gaime_mods">github.com/mattkanwisher/gaime_mods</a></p>
+</header>
+
+<p class="lede">The G'AIM'E TIME CRISIS Lightgun is a small HDMI console made by Tassei
+Denki, officially licensed by Bandai Namco for the Time Crisis 30th anniversary and
+launched on Kickstarter in late 2025. It ships as a sealed appliance: you plug in a gun,
+you plug in a TV, you shoot things. There is no settings screen, no file manager, no
+network stack, and no way out of the launcher.</p>
+
+<p>I bought the Japanese retail version in Akihabara. This is what was inside it.</p>
+
+<p>Two things made this project unusually productive. The first is that the vendor
+publishes a <strong>4 GB full firmware image as an unauthenticated download</strong> —
+not a delta patch, the whole system. The second is that there is no secure boot anywhere
+in the chain, so once you understand the image you can also put things back.</p>
+
+<div class="toc">
+  <h4>What's in here</h4>
+  <ol>
+    <li>The console: a hardcoded key, a homemade flasher, and a root shell</li>
+    <li>The gun: an absolute-positioning light gun that already works on any PC</li>
+    <li>What's still open</li>
+  </ol>
+</div>
+
+<div class="callout">
+<span class="label">Method</span>
+<p>Everything here came from the vendor's own public download, a USB cable, a $3 serial
+adapter, and hardware I own. Nothing was obtained from the vendor under NDA, nothing was
+pirated, and no game data is republished. Where I got something wrong — and I got several
+things wrong — the correction is in the text rather than quietly edited out.</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ PART ONE -->
+
+<div class="part">
+  <span class="kicker">Part one</span>
+  <h2>The console</h2>
+</div>
+
+<h2><span class="num">01</span>A 4 GB download and a key left in the updater</h2>
+
+<p>The update package is a Windows-only vendor tool plus three <code>.dat</code> files.
+The <code>.dat</code> files start with the ASCII magic <code>GAIMEENC</code> and have a
+payload entropy of 7.9998 — genuinely encrypted, not merely packed.</p>
+
+<p>The updater, <code>GAIMEUpdater.exe</code>, is a .NET 8 single-file bundle. Extracting
+<code>GAIMEUpdater.dll</code> from the bundle and decompiling the
+<code>FirmwareDecryptor</code> class gives away the entire scheme in one screen, including
+the key:</p>
+
+<pre><code>AES-256-GCM, key hardcoded in the binary:
+  2C4B5B4D84F9A5E0E4D4C2F78B6A1D9E0A0B1C2D3E4F5061728394A5B6C7D8E9
+
+Layout:  "GAIMEENC" (8) · version=1 (1) · max chunk (4, LE = 4 MiB) · base nonce (12)
+         then repeating { length (4, LE) · ciphertext · GCM tag (16) }
+
+Per-chunk nonce = base nonce with the LE int32 at bytes 8..12 XORed with the
+chunk index. No AAD.</code></pre>
+
+<p>Underneath is a plain <strong>Allwinner IMAGEWTY</strong> image — the standard
+PhoenixSuit/LiveSuit container, 49 members — so there was no second layer to defeat.</p>
+
+<p>I wrote the encryptor as well as the decryptor, because that is the only honest test of
+whether you have understood a format. Re-encrypting an unmodified image reproduces the
+vendor's shipped <code>.dat</code> <strong>byte for byte</strong>, same SHA-256. At that
+point the container is not "probably understood", it is solved.</p>
+
+<h2><span class="num">02</span>What was actually in there</h2>
+
+<div class="tablewrap">
+<table>
+<tr><th>SoC</th><td><strong>Allwinner A527</strong> (<code>sun55iw3</code>), board
+  <code>a527-pro2</code>, octa-core Cortex-A55</td></tr>
+<tr><th>DRAM</th><td>512 MiB LPDDR4 @ 1200 MHz</td></tr>
+<tr><th>Storage</th><td>58.24 GiB eMMC (reported as 59640 MB by BOOT0)</td></tr>
+<tr><th>OS</th><td>Android 13 (SDK 33), build <code>TQ2A.230405.003.B2</code>,
+  <code>test-keys</code></td></tr>
+<tr><th>Kernel</th><td>Linux 5.15.119, built <code>root@dashine-namco</code></td></tr>
+<tr><th>Boot chain</th><td>BOOT0 → BL31 (ARM Trusted Firmware v2.5) → SCP/arisc →
+  U-Boot 2018.07</td></tr>
+<tr><th>Board</th><td><code>LBQ-1585-A-V1.1</code>, dated 2025-07-23</td></tr>
+<tr><th>Camera</th><td><strong>none</strong> — zero <code>csi</code>/<code>mipi</code>
+  entries in <code>sys_config.fex</code></td></tr>
+</table>
+</div>
+
+<p>The ODM is <strong>Dashine</strong>. Every app package is <code>com.dashine.*</code>, and
+a leftover build path in the config files reads
+<code>D:\Dashine\New Products\Lightgun\Firmware\GaimeBox_Burn_Tools\</code>. A second
+leftover dev path (<code>C:\Users\Ian\...</code>) gave away where the updater stages its
+decrypted image, which is how I confirmed the decryption chain before writing any code.</p>
+
+<h3>The three SKUs are the same firmware</h3>
+
+<p>The three retail bundles — Basic, Premium, Ultimate — ship three different
+<code>.dat</code> files, so you would reasonably expect three different builds. They are
+not.</p>
+
+<p>Basic simply omits three of the four game APKs (though it keeps the odex/vdex stubs for
+all four). Premium and Ultimate, compared file-by-file across every partition, differ in
+<strong>exactly one file</strong>: the launcher APK. Those two launchers share a package
+name, differ by <em>five bytes</em>, and their only differing strings are compression
+artefacts.</p>
+
+<p>Which means the Premium-vs-Ultimate distinction is not in the firmware at all. The
+first-launch "authentication" — Premium wants a pedal, Ultimate wants two guns — is just
+runtime accessory detection.</p>
+
+<h3>The emulator is a licensed Namco core, not MAME</h3>
+
+<p>This was the finding I least expected. Each game is a Unity app wrapping a native core,
+and for Time Crisis that core is <code>libSys22Plugin.so</code>, stamped:</p>
+
+<pre><code>(C)2021 BANDAI NAMCO Research Inc.</code></pre>
+
+<p>So this is an <strong>in-house, licensed Namco System 22 emulator</strong> — not FBNeo,
+not MAME. Practically that means there are no GPL obligations to lean on and no source
+offer to expect. It also means the exported API is unusually clean, and shipped with its
+debug hooks intact:</p>
+
+<pre><code>Sys22Plugin_SetRom            Sys22Plugin_DebugReadMemory
+Sys22Plugin_SetInputPointing  Sys22Plugin_DebugWriteMemory
+Sys22Plugin_SetEEPROM         Sys22Plugin_GetForceFeedback
+Sys22Plugin_UpdateFrame       Sys22Plugin_Get/PutRankingData</code></pre>
+
+<p>ROM data is handed in via <code>Sys22Plugin_SetRom</code> from the C# layer, so it lives
+as a Unity asset inside a 39 MB <code>data.unity3d</code> rather than as recognisable MAME
+set files.</p>
+
+<h2><span class="num">03</span>Getting in: the loader was hiding in plain sight</h2>
+
+<p>Allwinner SoCs have a boot ROM mode called <strong>FEL</strong> that speaks a simple USB
+protocol and gives you arbitrary memory read, write and execute. The question was how to
+enter it, and which port.</p>
+
+<p>The answer, from the vendor's own instructions: hold the pinhole <em>Programming</em>
+button, then insert USB-C into the <strong>rear power jack</strong>. The power port is
+also a data port. Release after about five seconds.</p>
+
+<pre><code>$ sunxi-fel version
+AWUSBFEX soc=00001890(A523) 00000001 ver=0001 44 08 scratchpad=00061500</code></pre>
+
+<p><code>soc=0x1890</code> independently confirmed the <code>sun55iw3</code> identification
+that had come from a factory boot log — this time from the live device rather than from a
+file.</p>
+
+<div class="callout warn">
+<span class="label">Learned the hard way</span>
+<p>Reading an unmapped address over FEL <strong>hangs the endpoint</strong>. I tried
+<code>0x100000</code>; the device stayed enumerated but every subsequent bulk transfer
+timed out, and only a physical replug cleared it. Stay inside SRAM until DRAM is up. This
+costs you a replug cycle every time you guess wrong, which is a strong argument for
+deriving addresses rather than trying them.</p>
+</div>
+
+<h2><span class="num">04</span>Writing our own flasher</h2>
+
+<p>FEL alone is not enough to read the flash. The boot ROM has no storage driver at all —
+it cannot touch eMMC. To read partitions you have to bring up DRAM and a storage stack
+first, which is what Allwinner's second-stage <strong>FES</strong> protocol is for:</p>
+
+<pre><code>FEL  →  load fes1.fex into SRAM, run it       (initialises DRAM)
+     →  load u-boot.fex into DRAM, run it     (enters "efex" mode)
+FES  →  partition read/write commands</code></pre>
+
+<p>I derived the command set from two independent sources that had to agree: the strings in
+the device's own <code>u-boot.fex</code> (<code>FEX_CMD_fes_up</code>,
+<code>fes_down</code>, <code>fes_force_erase</code>…) and the numeric opcodes in
+<a href="https://github.com/jankowskib/FELix">FELix</a>. Every name in FELix's enum appears
+in this firmware's U-Boot, so the enum <em>is</em> this device's command set.</p>
+
+<p>That mattered more than it sounds, because <code>fes_up</code> (read) and
+<code>fes_down</code> (write) are <strong>adjacent opcodes</strong>, and
+<code>force_erase</code> sits in the same table. Getting one digit wrong is the difference
+between a backup and a brick.</p>
+
+<div class="callout ok">
+<span class="label">Design decision</span>
+<p>So the dumper is <strong>read-only by construction</strong>, not by discipline.
+<code>FES_DOWNLOAD</code>, <code>FES_FORCE_ERASE</code> and <code>FES_FORCE_ERASE_KEY</code>
+are <em>not defined anywhere in the file</em>. There is no flag to get wrong and no branch
+to take by accident; a bug in that tool can only ever produce a bad read.</p>
+<p>Writing lives in a separate tool that refuses any sector whose current contents match
+neither the recorded original nor the intended result, and reads back and compares
+everything it writes.</p>
+</div>
+
+<h3>The bug that would have ruined the backup</h3>
+
+<p>The first full dump completed cleanly and produced 27 files that all looked plausible.
+They were entirely wrong.</p>
+
+<p>The GPT's logical block addresses sit <strong>40960 sectors above</strong> where FES
+actually addresses data. Every partition had been read from 20 MiB past where it should
+have been. The file named <code>private.img</code> actually contained
+<code>media_data</code>. Nothing errored, nothing looked corrupt, and every file was
+exactly the right size.</p>
+
+<p>What caught it was checking filesystem magic numbers rather than trusting the sizes. The
+fix is a calibration pass that probes known-signature partitions before dumping anything:</p>
+
+<pre><code>probes = [("boot_a",        b"ANDROID!"),
+          ("init_boot_a",   b"ANDROID!"),
+          ("vendor_boot_a", b"VNDRBOOT"),
+          ("vbmeta_a",      b"AVB0")]
+
+for offset in (40960, 0):
+    ...
+sys.exit("could not calibrate FES addressing — refusing to dump")</code></pre>
+
+<p>If it cannot prove which addressing scheme it is talking to, it refuses to run. A backup
+you cannot verify is not a backup.</p>
+
+<p>The resulting 27-partition dump captured something that exists nowhere else: this unit's
+<strong>factory firmware, which is older than anything the vendor publishes</strong>. The
+public download only overwrites eleven partitions; the per-device material — the keybox,
+the <code>frp</code> partition explicitly preserved across re-production — sits outside
+that write set.</p>
+
+<h3>No secure boot. Anywhere.</h3>
+
+<p>Worth stating plainly, because it is the reason any of the rest was possible: the secure
+boot fuse is clear, the AVB flags are zero, and there is no dm-verity. The only integrity
+check anywhere in the update path is <strong>a 32-bit sum of words</strong>.</p>
+
+<h2><span class="num">05</span>The real problem: nothing could be observed</h2>
+
+<p>At this point I could read and write flash, and had a verified backup. What I did not
+have was any way to see what the device was doing. FES gives you no console output. The
+console has no network. The HDMI output showed a kiosk that did not care what I had
+patched.</p>
+
+<p>I applied five separate property patches to enable adb over several rounds. Every one of
+them was written correctly, verified by read-back, and produced <strong>absolutely no
+observable change</strong>. Five rounds of a completely blind loop.</p>
+
+<p>The way out was to stop trying to fix the problem and instead build a feedback channel.
+The U-Boot splash screen lives as a bitmap in a FAT16 filesystem inside the
+<code>bootloader_a</code> partition — so I replaced it.</p>
+
+{{FIG:bootlogo_stock}}
+{{FIG:bootlogo_new}}
+
+<p>12156 sectors, written over FES, read back and verified. Seeing that appear on the TV
+was the first hard proof that our writes were reaching real flash and surviving a real
+boot. It answered nothing about adb, but it converted the whole project from guessing to
+measuring.</p>
+
+<h2><span class="num">06</span>Then we opened it, and found a labelled UART</h2>
+
+<p>Three unpopulated headers sit along the right edge of the board, all clearly
+silkscreened:</p>
+
+<div class="tablewrap">
+<table>
+<tr><th>Header</th><th>Pins</th><th>What it is</th></tr>
+<tr><td><code>J2</code></td><td>GND · TX · RX</td>
+  <td><strong>the debug UART</strong> — 0.1" through-holes, no fine-pitch work needed</td></tr>
+<tr><td><code>J3</code></td><td>+ · TDI · TMS · TCK · TDO · GND</td><td>full JTAG</td></tr>
+<tr><td><code>J4</code></td><td>GND · GND · GND</td><td>extra grounds</td></tr>
+</table>
+</div>
+
+<p>On the solder side, <code>SW1</code> is silkscreened <strong><code>FEL</code></strong> —
+the pinhole programming button, named for exactly what it does — and <code>SW2</code> is
+<code>AP-RESET</code>. The USB-C power port is silkscreened <code>POWIN</code>.</p>
+
+<p>Receive-only capture at 115200 8N1, adapter RX to <code>J2</code> TX, grounds common,
+adapter power pins left disconnected:</p>
+
+<pre><code>[143]HELLO! BOOT0 is starting!      BOOT0 commit : 1cbb5ea8b3
+[160]PMU: AXP2202                   [165]PMU: AXP1530
+[286]enable_jtag
+[349][mmc]: MMC 5.1                 [357][mmc]: 59640 MB
+[377]DRAM CLK =1200 MHZ             DRAM Type =8 (LPDDR4)
+[550]Jump to second Boot.
+NOTICE:  BL31: v2.5(debug):55b180a27, Built : 11:09:52, Sep 18 2023
+NOTICE:  [SCP] :sunxi-arisc driver is starting</code></pre>
+
+<p>Three things fell out of that immediately. <code>enable_jtag</code> is printed by BOOT0,
+so the JTAG header is live rather than fused off. 59640 MB independently corroborated the
+eMMC size measured over FES. And the boot chain is BOOT0 → BL31 → SCP → U-Boot, which
+explains why a bare <code>u-boot.fex</code> is only part of the story.</p>
+
+<div class="callout warn">
+<span class="label">macOS gotcha that will cost you an evening</span>
+<p>termios settings on <code>/dev/cu.*</code> <strong>evaporate when the last file
+descriptor closes</strong>. Running <code>stty -f /dev/cu.X 115200</code> and then
+<code>cat /dev/cu.X</code> as two separate processes silently reverts to 9600 baud — I
+verified this by re-opening immediately after setting it. The port must be held open across
+both the configure and the read. A naive <code>stty &amp;&amp; cat</code> one-liner hands
+you garbage that looks exactly like a wiring fault.</p>
+</div>
+
+<h2><span class="num">07</span>The adb bug was mine</h2>
+
+<p>With a root shell on the serial console, one <code>logcat</code> explained five rounds of
+failure:</p>
+
+<pre><code>avc: denied { setcurrent } for scontext=u:r:adbd:s0 tcontext=u:r:adbd:s0 permissive=0
+adbd: main.cpp:162] Could not set SELinux context</code></pre>
+
+<p><strong><code>ro.secure=0</code> was the thing breaking adb</strong> — and I had set it
+myself, in the very first patch, to loosen security.</p>
+
+<p>Here is the mechanism. With <code>ro.secure</code> clear,
+<code>should_drop_privileges()</code> returns false, so adbd tries to stay root and calls
+<code>selinux_android_setcon(u:r:su:s0)</code>. A <code>user</code> build's policy contains
+no such transition. The kernel denies <code>setcurrent</code>, adbd hits a
+<code>LOG(FATAL)</code>, and restarts every five seconds, forever.</p>
+
+<p>Everything else had been correct the whole time. The UDC was present as
+<code>4100000.udc-controller</code>, functionfs was mounted, and all five properties had
+applied exactly as written. The single patch intended to make the device <em>more</em> open
+was the one preventing it from opening.</p>
+
+<pre><code>$ adb shell getprop ro.product.model
+A527 PRO</code></pre>
+
+<p>There is a wider lesson in that, and it is not about Android. Five rounds of blind
+patching produced five rounds of nothing, and the fix took one line of log. The expensive
+part of the project was never the crypto or the flash protocol — it was working without
+feedback. Building the observation channel should have come first.</p>
+
+<h2><span class="num">08</span>Our own software on it</h2>
+
+{{FIG:hello}}
+
+<p>All of this is built with the raw Android SDK tools — <code>aapt2</code>,
+<code>javac</code>, <code>d8</code>, <code>apksigner</code> — with no Gradle anywhere, and
+installed to <code>/data</code> so it cannot affect boot and <code>adb uninstall</code>
+removes it cleanly.</p>
+
+<p>Then the more useful one: the console has 106 packages installed and 24 launchable
+activities, and the kiosk exposes none of them. Stock Android Settings was sitting there
+the entire time.</p>
+
+{{FIG:settings}}
+
+<p>So we wrote a file browser and app launcher to reach the rest:</p>
+
+{{FIG:explorer}}
+{{FIG:input_demo}}
+
+<p>Finally, replacing the launcher entirely. This took a couple of attempts —
+<code>cmd package set-home-activity</code> reported success and was then silently
+overridden, <code>pm clear-package-preferred-activities</code> does not exist on this
+build, and there is no device owner to lean on. What worked:</p>
+
+<pre><code># explorer declares CATEGORY_HOME; disable the kiosk so it stops reclaiming it
+adb shell pm disable-user com.dashine.hidcommunication
+
+# fully reversible:
+adb shell pm enable com.dashine.hidcommunication
+adb shell cmd package set-home-activity com.dashine.hidcommunication/.MainActivity</code></pre>
+
+<p>Confirmed surviving a reboot. The console now boots to a general-purpose Android UI, and
+the original software launches on purpose rather than by default.</p>
+
+<!-- ══════════════════════════════════════════════════════════════ PART TWO -->
+
+<div class="part">
+  <span class="kicker">Part two</span>
+  <h2>The gun</h2>
+</div>
+
+<p>The console was the harder target. The gun turned out to be the more interesting one —
+and, for anyone who just wants a cheap light gun, by far the more useful.</p>
+
+<h2><span class="num">09</span>Five interfaces, and one of them is a gift</h2>
+
+<pre><code>GAIME v1 — Tassei Denki Co.,Ltd — VID 0x2E2C  PID 0x0631
+bcdDevice 0x0419, serial 9165, USB 2.0, 500 mA
+bDeviceClass 0xEF / sub 2 / proto 1   (composite, interface association)</code></pre>
+
+<div class="tablewrap">
+<table>
+<tr><th>#</th><th>Class</th><th>What it is</th></tr>
+<tr><td>0</td><td>HID</td><td>Boot keyboard, 8-byte reports</td></tr>
+<tr><td>1</td><td>HID</td><td><strong>Digitizer — the pointer</strong></td></tr>
+<tr><td>2</td><td>HID</td><td>Vendor page <code>0xFF00</code>, 64-byte in/out — config</td></tr>
+<tr><td>3</td><td>Video</td><td>UVC VideoControl</td></tr>
+<tr><td>4</td><td>Video</td><td>UVC VideoStreaming</td></tr>
+</table>
+</div>
+
+<p>Interface 1 decodes to this:</p>
+
+<pre><code>Usage Page (Digitizer) / Usage (Touch Screen), Report ID 1
+  Tip Switch    1 bit     &lt;- trigger
+  In Range      1 bit     &lt;- gun claims it has screen lock
+  padding       6 bits
+  X, Y          16 bits each, Logical/Physical 0..10000, Input(Data,Var,Abs)</code></pre>
+
+<p>A six-byte report, and <strong>X and Y are absolute</strong> over a normalised 0–10000
+space. That is precisely what light gun use requires, and it is why the gun works as a
+no-calibration absolute pointer the moment you plug it into any PC.</p>
+
+<p>It also settles the biggest open question about the product. <strong>All of the computer
+vision runs inside the gun.</strong> The console has no camera hardware whatsoever, and the
+gun reports derived coordinates while accepting calibration coefficients back. For pointing
+purposes the console is entirely optional — which means this is, functionally, a
+Sinden-class light gun at a third of a Sinden's price.</p>
+
+<h2><span class="num">10</span>Measuring the jitter everyone complains about</h2>
+
+<p>Reviews of this product mention the pointer jumping on trigger pull. Having a decoder
+meant I could measure it rather than speculate. Ten seconds of capture with the gun sitting
+on a desk, not aimed at a display:</p>
+
+<div class="tablewrap">
+<table>
+<tr><th>Report rate</th><td><strong>~278 Hz</strong> in one capture,
+  <strong>~28 Hz</strong> in another — wildly variable</td></tr>
+<tr><th>X / Y range</th><td>99 … 9900 (the full span it will produce)</td></tr>
+<tr><th>Mean jump</th><td>|dX| 93.5, |dY| 86.6 counts per report</td></tr>
+<tr><th>Worst jump</th><td><strong>4841 counts</strong> — about half the screen, in one report</td></tr>
+<tr><th><code>in_range</code></th><td>set in <strong>2781 of 2781 reports</strong>, while
+  producing all of the above</td></tr>
+</table>
+</div>
+
+<p>Two things matter there. First, the descriptor declares 0–10000 but the gun clamps to
+<strong>99–9900</strong>, so that is the range you should actually map to screen
+coordinates.</p>
+
+<p>Second — and this corrected a guess I had made confidently in writing — <strong>the
+<code>in_range</code> bit is asserted continuously even while the output is
+garbage</strong>. I had assumed it would make a clean validity gate, a free "do I see the
+screen" signal. It is useless for that. It never once cleared, across 2781 consecutive
+reports of pure noise.</p>
+
+<p>With no screen lock the gun does not jitter gently around a point; it sweeps the entire
+coordinate space. For an <em>absolute</em> pointer at up to 278 Hz, that means the cursor
+gets teleported hundreds of times a second, and your desktop becomes unusable — which is
+exactly the reported symptom, now with numbers attached.</p>
+
+<p>So the filtering has to be geometric rather than flag-based: a median-of-5 spike filter
+plus a maximum-jump gate, with a run of six consecutive "outliers" accepted anyway so that
+genuinely fast aiming still tracks.</p>
+
+<h3>Not wrecking your desktop in the meantime</h3>
+
+<p>macOS matches interface 1 as a system pointing device, so simply plugging the gun in
+hijacks your cursor. <code>gun_bridge.swift</code> seizes the digitizer with
+<code>kIOHIDOptionsTypeSeizeDevice</code>, which stops macOS routing it anywhere:</p>
+
+<pre><code>work/gun_bridge --log              # seize + print reports
+work/gun_bridge --block            # seize + swallow everything
+work/gun_bridge --app RetroArch    # forward only while RetroArch is frontmost</code></pre>
+
+<p>Start it <em>before</em> plugging the gun in — it waits for the device and grabs it on
+arrival, so the cursor is never hijacked at all. This also explained an earlier dead end
+where raw HID reads returned nothing: macOS had the device open and would not share it.</p>
+
+<h2><span class="num">11</span>Talking to the gun directly</h2>
+
+<p>Interface 2 carries the vendor's config protocol in 64-byte reports. The console-side
+methods are named <code>encrypt*</code>, but there is no encryption — it is framing plus a
+<strong>Modbus CRC-16</strong>, little-endian, over the leading N bytes:</p>
+
+<pre><code>byte 0     function code      5 = SYSTEM_CMD
+byte 1     data length        1 = gun mode, 33 = calibration
+byte 2     sub-function       5 = gun mode, 6 = calibration, 7 = MD5 result
+byte 3-5   reserved (zero)
+byte 6     payload / flags
+byte 7+    payload
+last 2     Modbus CRC-16, little-endian</code></pre>
+
+<p>Verified against the real gun, with no console involved anywhere:</p>
+
+<pre><code>$ python3 tools/gun_probe.py gunmode 0
+hid_write returned 65  error='Success'
+packet: 05 01 05 00 00 00 00 83 d1 …
+reply:  05 01 05 00 00 00 01 42 11 …</code></pre>
+
+<p>The gun accepts the command and returns a well-formed 64-byte acknowledgement: same
+function code, same sub-function, and a valid Modbus CRC-16 (<code>0x1142</code>, checked
+independently). <strong>A host can drive this gun today, with no vendor software</strong> —
+single-shot versus autofire, the calibration grid, and the black/white/pink screen-edge
+assist bars added in firmware v4.0.3.</p>
+
+<p>One sub-function is more interesting than the others. Number 7 returns a bit-packed MD5
+validation result <em>to</em> the gun, which is almost certainly the accessory check added
+in v4.0.3 — an anti-counterfeit handshake.</p>
+
+<h2><span class="num">12</span>The camera stream is a test pattern</h2>
+
+<p>The gun presents its camera to any host as a standard UVC device, "Dashine UVC", with a
+sensible-looking mode list up to 1920×1080. Capturing it seemed like the fastest route to
+understanding the tracking.</p>
+
+{{FIG:gunfeed}}
+
+<p>What comes out is not imagery. It is a synthetic scrolling gradient, and the
+measurements are unambiguous:</p>
+
+<ul>
+<li><strong>Every row is perfectly uniform horizontally</strong> — per-row standard
+deviation across x is exactly <code>0.000</code> in all three channels. No lens and no
+sensor can do that.</li>
+<li>R and B clip to 0 or 255 together while G ramps linearly at ~0.418 per row.</li>
+<li>The pattern scrolls vertically at exactly <strong>+1.6 rows per frame</strong>,
+perfectly linear across 60 frames.</li>
+<li><strong>Zero sensor noise.</strong> Frame 0 rolled by 8 rows is <em>bit-identical</em>
+to frame 5; rolled by 16 rows it is bit-identical to frame 10. Max difference: 0. A real
+sensor always shows read noise.</li>
+</ul>
+
+<p>So the UVC bridge enumerates, negotiates a format and streams happily, but the sensor
+pipeline behind it is not in imaging mode. What you get is a built-in ramp test pattern.</p>
+
+<p>This looks like a bring-up leftover that shipped disabled rather than a fault. Nothing in
+the console-side code ever touches video — across the service, the calibration app and the
+launcher there are only three sub-function codes and no camera or video command of any
+kind. The console has no camera hardware and never consumes a video stream.</p>
+
+<div class="callout">
+<span class="label">Read this one carefully</span>
+<p>The vendor's own string descriptor for interface 4 reads <strong>"Video
+Inactive"</strong>, which is tempting to quote as proof. It isn't. In UVC, alt setting 0 of
+a streaming interface is conventionally the zero-bandwidth "inactive" alt, and interface 4
+does report <code>bNumEndpoints = 0</code> at alt 0 — so the string may just be labelling
+that. Suggestive, not conclusive. The pixel measurements above are the load-bearing
+evidence.</p>
+</div>
+
+<h2><span class="num">13</span>Opening the gun</h2>
+
+<p>No public teardown of this device existed, so all of this is new.</p>
+
+{{FIG:gun_open}}
+
+<p>The main board is <code>LBQ-1585-C-V1.1</code>, dated 2025-07-23, with a trigger
+daughterboard <code>LBQ-1585-D-V1.1</code>. And the board number gives something away:
+<strong>PID <code>0x0631</code> is 1585 decimal</strong>. The USB product ID was assigned
+straight from the internal project number, which is a useful handle for searching supplier
+and FCC databases.</p>
+
+{{FIG:gun_soc}}
+
+<p>Two things dominate that photo. <code>J3</code> is four unpopulated plated
+through-holes, silkscreened <strong>GND / TX / RX / V3.3</strong> — a serial console, with a
+square pad on the reverse marking pin 1. And the large central IC at <code>U8</code> is a
+~96-pin QFN whose top is <strong>completely blank</strong> at full magnification. No laser
+etch, no logo, nothing. House-marked or deliberately unmarked.</p>
+
+<p>Which means the SoC cannot be identified from the package at all. It has to come from a
+UART boot log. That one fact makes <code>J3</code> the whole ballgame.</p>
+
+{{FIG:gun_back}}
+
+<p>The back is nearly bare — a couple of tactile switches, some 0402 passives, no debug
+header beyond <code>J3</code>, and critically <strong>no DRAM and no second flash</strong>.
+Combined with the front, that settles the architecture: the boot medium is a single
+GigaDevice SPI NAND (1 Gbit / 128 MiB, 1.8 V, WSON-8) near the camera end, and the DRAM must
+be <strong>stacked in-package with the SoC</strong>.</p>
+
+<p>A ~1 GB system-in-package with in-package DDR plus 128 MiB of SPI NAND is a coherent,
+conventional design for a Linux-class vision part — and it matches the vendor's own
+published claim that each gun runs Linux with 1 GB of RAM and a 1080p camera in the
+barrel.</p>
+
+{{FIG:gun_camera}}
+
+<div class="callout warn">
+<span class="label">Correction</span>
+<p>An earlier version of my notes said "an SPI-NOR chip in an SOIC-8 can be read in place
+with a clip." <strong>Both halves of that are wrong for this board.</strong> It is NAND, not
+NOR — a bare CH341A with flashrom will not touch it, since flashrom does not do SPI NAND.
+And it is WSON-8, not SOIC-8: the pads are underneath the package, so <em>a SOIC clip
+physically cannot attach</em>.</p>
+<p>That inverts the plan. Get UART first, reach a shell or interrupt the bootloader, and
+dump the NAND in-circuit through the SoC. Desoldering becomes the fallback, not the opening
+move.</p>
+</div>
+
+<h2><span class="num">14</span>Can the gun be reflashed? Not through any visible path</h2>
+
+<p>I checked this from every angle available without opening it, and the answer is
+consistently no.</p>
+
+<p><strong>The gun exposes no update interface.</strong> One USB configuration, no alternate
+config hiding anything, five interfaces that are three HID and two Video. There is no DFU
+interface (class <code>0xFE</code>/subclass <code>0x01</code>) and no vendor-class interface
+(class <code>0xFF</code>). There is nothing to flash into.</p>
+
+<p><strong>The console never updates the gun.</strong> No gun firmware blob exists anywhere
+in any SKU's image — searching all of system, vendor and product for
+<code>*.bin</code>, <code>*fw*</code>, <code>*firmware*</code>, <code>*.hex</code>,
+<code>*.dfu</code> and <code>*gun*</code> turns up only stock Allwinner BSP leftovers. And
+no code references one: grepping the service, the calibration app and the launcher for
+<code>bootloader</code>, <code>dfu</code>, <code>upgrade</code>, <code>updateFirmware</code>
+and <code>gunVersion</code> returns zero hits.</p>
+
+<p>The gun's version appears only as <code>bcdDevice = 0x0419</code>, independent of the
+console's version space. It looks factory-programmed only.</p>
+
+<p>That leaves two plausible routes, neither yet attempted: a bootloader entered by a
+button-or-trigger combo held while plugging in (common on this class of device, invisible
+from descriptors, and cheap to test), or an undocumented sub-function beyond 7 on interface
+2. <strong>Do not blind-scan the latter.</strong> Firing unknown function codes at a device
+with a writable loader is exactly how a unit becomes a paperweight — derive it from the
+gun's own firmware first, which means getting that UART working.</p>
+
+<!-- ══════════════════════════════════════════════════════════════ END -->
+
+<hr>
+
+<h2><span class="num">15</span>What's still open</h2>
+
+<p><strong>The gun's SoC is unidentified.</strong> Everything downstream — its firmware, the
+CV pipeline, whether the camera can be put into imaging mode — waits on soldering three
+wires to <code>J3</code> and reading the boot log.</p>
+
+<p><strong>adb is not yet permanent.</strong> The fix is a genuine one-byte revert of
+<code>ro.secure=0</code> back to <code>1</code> at a known sector, keeping
+<code>ro.debuggable=1</code> so the serial console survives. Until then
+<code>setprop service.adb.root 0</code> has to be re-applied over serial after each boot.
+The write needs FEL, and the FEL button snapped off during disassembly — it is a momentary
+switch, so briefly shorting its own pads does the same job.</p>
+
+<p><strong>There is no mouse cursor.</strong> Plug a USB mouse into the front port and it
+works — the device enumerates correctly (<code>Classes: CURSOR | EXTERNAL</code>,
+<code>Mode: POINTER</code>), motion tracks, clicks land where you aim. There is simply no
+arrow drawn. The obvious theory was that the vendor blanked the pointer artwork, since the
+games draw their own crosshair, but that is disproved: the pointer bitmaps in
+<code>framework-res.apk</code> are intact and fully opaque. The current lead is that
+SurfaceFlinger has <strong>no <code>Sprite</code> layer at all</strong>, meaning the cursor
+surface is never created in the first place.</p>
+
+<p><strong>The System 22 core's debug hooks</strong> are exported and untouched, and the ROM
+data sits inside a Unity asset bundle rather than as loose files.</p>
+
+<hr>
+
+<h3>A note on what this is and isn't</h3>
+
+<p>This is documentation of a device I bought, using a firmware image its manufacturer
+publishes to anyone who asks. No game data is redistributed here and none will be. The full
+flash backup exists so that <em>this unit</em> can be restored, and it stays on my disk —
+it contains a complete copy of licensed commercial software.</p>
+
+<p>Device-unique identifiers — the chip SID, the adb serial derived from it, eFuse contents
+— are redacted throughout the published notes. The raw teardown photographs carried GPS EXIF
+with precise coordinates and are not committed; every image on this page comes from a
+stripped copy.</p>
+
+<p>If you own one of these and want to follow along: the read-only paths are genuinely safe,
+and the write paths are genuinely not. Take the backup first, and make sure you can prove it
+is a real backup before you rely on it. Mine wasn't, the first time.</p>
+
+<footer class="end">
+  <p>Tooling, full findings including the dead ends, and the FEL/FES protocol notes are at
+  <a href="https://github.com/mattkanwisher/gaime_mods">github.com/mattkanwisher/gaime_mods</a>.</p>
+  <p>Not affiliated with Tassei Denki, Bandai Namco, or Dashine.</p>
+</footer>
+
+</div>
+</body>
+</html>
