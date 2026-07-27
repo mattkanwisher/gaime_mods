@@ -1632,3 +1632,43 @@ right for the correct reason: those codes reboot, factory-reset and overwrite fi
 **No.** The mechanism is USB HID and needs no disassembly. Opening the gun was necessary
 only to *discover* it — the descriptors advertise nothing, and the protocol is only legible
 from the firmware. What the vendor has never shipped is any gun firmware to install.
+
+### Resolution: the IMU is not populated, and frames arrive by dmabuf
+
+§19 left the LSM6DS3 "unresolved" after §18 had claimed outright that it was absent.
+Runtime evidence from the live gun settles it.
+
+The device node exists and the bus is there — `/dev/I2C2_LSM6DS3`, `/dev/i2c-2`,
+`/dev/i2c-3` — but the part **never acknowledges**: 24 NAKs at address `0x6a` in a single
+boot.
+
+```
+[   11.315307] [I2C] lombo_i2c_stop:60 err: i2c-2 int_pd: 0x1004, abrt: 0x1, device addr: 0x6a
+```
+
+And the running `/app/bin/gun` holds **no I²C descriptor at all**. Its complete fd
+inventory, with the app fully up and burning 29 s of CPU in 40 s of uptime:
+
+```
+4 x /dmabuf:                    camera frames, zero-copy
+    /dev/ion                    ION allocator
+    /dev/lb_util                Lombo utility device
+    /dev/hidg0, hidg1, hidg2    the three HID gadget endpoints
+    pwmchip0/pwm5/duty_cycle    recoil motor (CN1 on the PCB)
+11 x gpio*/value                gpio0,1 (chip0) + gpio27,28,33,34,35,41,43,44,45 (chip2)
+    /dev/log_main, /dev/null, anon_inode:[eventpoll]
+```
+
+So: the part is **not populated on this unit**, the driver creates the node anyway, the bus
+NAKs, and the Fusion AHRS stack in the binary is **compiled in but inactive** — vendor SDK
+code carried along rather than a live stage of the pipeline. The aim path is therefore NPU
+corners -> homography -> calibration, with the IMU fusion dormant.
+
+Two other things fall out of that fd list:
+
+- **No `/dev/video*` descriptor.** `gun` does not own the camera; `viss_isp` does, and hands
+  frames across as **dmabuf** handles through ION. That is why §7's UVC test-pattern question is a
+  userspace routing question — three processes share the ISP output and only `uvc-gadget`
+  feeds the host.
+- **Eleven GPIO lines** — trigger, buttons and LEDs — plus one PWM channel for the recoil
+  motor, matching `CN1`/`Motor` on the PCB (§10).

@@ -106,7 +106,7 @@ footer.end a{color:var(--accent)}
   turned out to be a second Linux computer with a deliberately unmarked SoC, an NPU, and
   a root shell on an unpopulated header. Here is everything we found, including the bits
   we got wrong.</p>
-  <p class="meta">2026-07-27 · built from commit <code>001724f</code> ·
+  <p class="meta">2026-07-27 · built from commit <code>6e27f42</code> ·
   <a href="https://github.com/mattkanwisher/gaime_mods">github.com/mattkanwisher/gaime_mods</a></p>
 </header>
 
@@ -919,13 +919,25 @@ Kalman-filtered</strong>. That is a far more serious pipeline than "a camera fin
 of your telly", and it explains why the thing works at all without an IR bar.</p>
 
 <div class="callout warn">
-<span class="label">Correction</span>
-<p>Earlier I wrote that the LSM6DS3 IMU "is not there" because the kernel driver fails to
-probe it. Too strong. The gun binary opens <code>/dev/I2C2_LSM6DS3</code> and
-<code>/dev/i2c-2</code> and drives the part <em>from userspace</em>, with the entire Fusion
-AHRS stack compiled in — a failed kernel probe is equally consistent with userspace owning
-the device. Presence is unresolved; the software plainly expects one.</p>
+<span class="label">…except it isn't actually running</span>
+<p>Checking the live device settles it, and not the way the code suggests. The bus NAKs the
+IMU <strong>24 times in a single boot</strong> at address <code>0x6a</code>, and the running
+<code>gun</code> process holds <strong>no I²C descriptor at all</strong> — with the app fully
+up and burning 29 s of CPU in 40 s of uptime. The part is not populated on this unit; the
+driver creates <code>/dev/I2C2_LSM6DS3</code> regardless, and the Fusion AHRS stack is
+compiled in but <strong>dormant</strong> — vendor SDK code carried along rather than a live
+stage.</p>
+<p>So the real aim path is NPU corners → homography → calibration, and the sensor fusion is
+aspirational. I had this wrong twice on the way here: first asserting the IMU was absent from
+a failed kernel probe, then over-correcting to "the software drives it from userspace" on the
+strength of the linked library. Only the fd list decided it.</p>
 </div>
+
+<p>That same fd list answers something else. <code>gun</code> holds <strong>no
+<code>/dev/video*</code></strong> either — it doesn't own the camera. <code>viss_isp</code>
+does, and passes frames across as <strong>dmabuf</strong> handles through ION. Which means
+the test-pattern mystery from section 12 is a userspace <em>routing</em> question: three
+processes share the ISP output, and only <code>uvc-gadget</code> feeds the host.</p>
 
 <h3>The model itself stays shut</h3>
 
