@@ -1271,3 +1271,61 @@ adb-<redacted>._adb-tls-connect._tcp   device   model:AYN_Thor
 is the wrong device's, and would have produced a confidently wrong conclusion. **Check
 `adb shell getprop ro.product.model` returns `A527 PRO` before trusting anything from adb**,
 or use the serial console, which cannot be confused for another device.
+
+### Resolved: the vendor suppresses the cursor with PointerIcon.TYPE_NULL
+
+Decompiling `GaimeCalibration.apk` with `jadx` answers it outright. **The vendor does not
+draw a cursor — it destroys the system one**, in three places, all
+`PointerIcon.getSystemIcon(ctx, 0)`, and `0` is `TYPE_NULL`:
+
+```java
+// GridRelativeLayout.java — unconditional, and this is the load-bearing one
+public PointerIcon onResolvePointerIcon(MotionEvent e, int i) {
+    return PointerIcon.getSystemIcon(getContext(), 0);
+}
+
+// CalibrationActivity.onCreate
+getWindow().getDecorView().setPointerIcon(PointerIcon.getSystemIcon(this, 0));
+
+// and again on every ImageView added at runtime (setInstructionImageView)
+imageView.setPointerIcon(PointerIcon.getSystemIcon(this, 0));
+```
+
+The in-game crosshair is drawn by Unity, not by Android. So the original instinct in §17 was
+right in substance — the suppression *is* deliberate, because the games draw their own
+reticle — and wrong only in mechanism: the artwork is untouched, the icon type is forced to
+null at the app layer.
+
+This also explains the missing `Sprite` layer. `TYPE_NULL` fades the pointer to alpha 0, and
+a sprite that is never made visible never has its surface created — so it is absent from
+SurfaceFlinger entirely rather than present-but-hidden.
+
+**Why the earlier fix failed.** §17 set `PointerIcon.TYPE_ARROW` on three views and nothing
+changed. Icon resolution walks *down* to the view under the pointer, so an icon on a parent
+loses to whatever child is being hovered — a `ListView`'s row `TextView`s here. Overriding
+`onResolvePointerIcon` is what makes it stick, which is exactly why the vendor overrode it
+rather than only calling `setPointerIcon`.
+
+**What we did.** Mirrored their structure in `CursorLayout`: override `onResolvePointerIcon`
+to return `TYPE_NULL` (so there can never be two cursors) and paint our own arrow in
+`dispatchDraw`, fed from `dispatchGenericMotionEvent` (mouse hover) and `dispatchTouchEvent`
+(the gun). Uses `getRawX/getRawY` minus `getLocationOnScreen`, because the content view sits
+below the status bar and window-relative coordinates draw the arrow offset by the inset.
+**Confirmed working on the TV.**
+
+### tools/uart_push.py — files over the serial console
+
+The console has no network and its adb only exists over USB, so with only the UART attached
+there was no way to install a rebuilt APK. `uart_push.py` closes that: base64 in paced
+256-byte `printf` chunks, because the console tty has **no flow control** and writing at full
+speed corrupts the stream silently. Both ends are md5-verified and a mismatch exits non-zero,
+so a corrupt push cannot be mistaken for a good one.
+
+```bash
+python3 tools/uart_push.py apps/gaime-explorer/out/gaime-explorer.apk /data/local/tmp/x.apk
+python3 tools/uart_shell.py run 'pm install -r -g /data/local/tmp/x.apk'
+```
+
+16805 bytes in 7.7 s (~4-5 KB/s of payload), md5 `a46e82a3…` matching on both sides. Fine for
+an APK, useless for an image. Note the first version reported a false mismatch because it
+assumed a fixed settle for the `md5sum` reply; it now polls for the digest.

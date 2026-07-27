@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.PointerIcon;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,6 +55,7 @@ public class ExplorerActivity extends Activity {
     private TextView header;
     private ListView list;
     private Button modeButton;
+    private CursorLayout root;
 
     private boolean filesMode = true;
     private File cwd = new File("/");
@@ -65,7 +67,7 @@ public class ExplorerActivity extends Activity {
     protected void onCreate(Bundle saved) {
         super.onCreate(saved);
 
-        LinearLayout root = new LinearLayout(this);
+        root = new CursorLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(BG);
 
@@ -130,23 +132,32 @@ public class ExplorerActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
         setContentView(root);
 
-        // This console ships with no visible mouse cursor — presumably deliberate,
-        // since the light gun games draw their own crosshair and a stray arrow
-        // would be wrong on screen. Requesting an explicit pointer icon per-view
-        // overrides that for our own windows.
-        forceArrowCursor(root);
-        forceArrowCursor(list);
-        forceArrowCursor(modeButton);
+        // The system cursor is never composited on this console (see CursorLayout
+        // for the evidence), so the root layout paints its own. Match the vendor
+        // and refuse the system pointer on the decor view too, so there is no way
+        // to end up with two.
+        getWindow().getDecorView()
+                .setPointerIcon(PointerIcon.getSystemIcon(this, PointerIcon.TYPE_NULL));
 
         showDir(new File("/"));
     }
 
-    private void forceArrowCursor(View v) {
-        try {
-            v.setPointerIcon(PointerIcon.getSystemIcon(this, PointerIcon.TYPE_ARROW));
-        } catch (Exception e) {
-            // older/odd builds may not carry the pointer resources at all
+    /** Mouse motion arrives as hover events; the gun arrives as touch. Feed both
+     *  to the cursor, and pass everything through untouched. */
+    @Override
+    public boolean dispatchGenericMotionEvent(MotionEvent e) {
+        if (root != null) {
+            root.onPointer(e);
         }
+        return super.dispatchGenericMotionEvent(e);
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent e) {
+        if (root != null) {
+            root.onPointer(e);
+        }
+        return super.dispatchTouchEvent(e);
     }
 
     private void toggleMode() {
