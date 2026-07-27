@@ -1902,3 +1902,50 @@ requirements are (a) restore the IAD `bDeviceClass` the UVC branch used to set,
 as above, and (b) it is **untested** whether the G'AIM'E console requires the gun
 to advertise a UVC interface during accessory detection — that needs the console
 hardware to check.
+
+## 24. Can the host see the real camera feed? Investigated — no clean path
+
+Question: swap the UVC test pattern for the actual image the CV uses, so the host
+can see it. Answer: not without substantial, reboot-prone reverse engineering,
+and not while aiming. Evidence:
+
+- **The vendor's `uvc-gadget` is a hardcoded test-pattern feeder.** 9960-byte
+  binary, links `libuvcg.so`, and its only source path is `test_yuyv_*` /
+  `test_video_create`. No V4L2 capture in the binary.
+- **`libuvcg.so` itself *can* bridge V4L2 -> UVC** — it exports
+  `libuvcg_v4l2_alloc_buffers/_dequeue_buffer/_export_buffers/_close` alongside
+  the gadget side (`libuvcg_stream_*`). So a custom bridge is buildable; the
+  blocker is a working V4L2 source.
+- **There is no free V4L2 tap of the camera** (`tools/v4l2_probe.c`, run on the
+  device):
+  ```
+  /dev/video1 (viss-csi2.capture, raw CSI):  open -> EBUSY   (pipeline holds it)
+  /dev/video3 (viss-isp0.path0):             open -> ENODEV
+  /dev/video4 (viss-isp0.path1):             open -> ENODEV
+  ```
+  The ISP's processed-output V4L2 nodes are non-functional; the vendor never
+  wired them. Frames reach `gun` only through the proprietary
+  `/dev/lb_util` + `/dev/ion` (dmabuf) path.
+- **`gun` owns the single camera stream** via `libcampan`'s `video_stream_*`
+  callback API (`video_stream_set_camera_source`, `_set_frame_cb`,
+  `_return_frame`, `comp_gaime_push_frame`). It has no frame-dump-to-file.
+- **Stopping `gun` to free the camera rebooted the device.** The pipeline does
+  not release cleanly (`sensor h63p_mipi power state is already 0!`), so even a
+  "stop aiming, show camera" mode is fragile.
+
+The theoretical routes, all substantial and none attempted further:
+
+1. A **camera-view mode**: stop `gun`, bring the sensor up ourselves via
+   `libcampan`, bridge to UVC via `libuvcg`. Costs: RE of two vendor library
+   ABIs, aiming stops while viewing, the only free node is raw bayer (not a nice
+   image), and killing `gun` currently reboots the box.
+2. **Patch the closed `gun`** to also emit frames to UVC — deep RE of a stripped
+   72 KB C++ binary.
+3. **Activate the ISP's second output path** (`path1`/video4) via media-ctl so it
+   works alongside `gun` — the dual path exists in the `/dev/media0` graph but the
+   node is ENODEV; enabling it needs Lombo ISP driver internals we do not have.
+
+`tools/v4l2_probe.c` (cross-compiled, query-only, safe to run alongside `gun`)
+is kept as a diagnostic. Conclusion: simultaneous aim + host-view is not
+possible with what is exposed; a view-only mode is a real project with reboot
+risk, gated on the fragile camera pipeline.
