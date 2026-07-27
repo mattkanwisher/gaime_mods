@@ -1780,3 +1780,81 @@ before installing (it runs third-party install code — a deliberate security
 gate). Ghidra's own decompiler helper also had to have `com.apple.quarantine`
 cleared (`xattr -dr`) or it dies as "Decompiler process died". Both are macOS
 Gatekeeper behaviours, not tool bugs.
+
+## 23. Persistent USB functions — mechanism proven, adb and MSC both blocked
+
+Question: can the gun be made to permanently expose a shell or storage over USB?
+**The mechanism is real and one line, but neither payload works cleanly in the
+stock composition.** The device is left restored to pristine stock.
+
+### The mechanism (works)
+
+The boot init `S30usb-gadget` (read-only rootfs) invokes
+`/app/shell/usb/gadget_ctrl.sh --start`, which is on **writable ext4** with no
+rootfs copy. That script builds the gadget from `CFG_*_ENABLE` flags. So adding
+any USB function permanently is a one-line flag flip in a writable file the
+vendor's own boot flow reads, and the vendor shipped complete function scripts
+(`g_adb.sh`, `g_msc.sh`, …) behind those flags.
+
+Proven: `CFG_ADB_ENABLE=1` + reboot composed `hid + uvc + adb`, and the Mac
+enumerated the new interface (adb saw the device by serial) — persistent across
+reboots. Kernel support is present: `CONFIG_USB_CONFIGFS_F_FS=y` (functionfs)
+and `CONFIG_USB_CONFIGFS_MASS_STORAGE=y`; UDC bind happens after all functions
+are created (correct order for functionfs).
+
+### adb — enumerates but never comes online
+
+adbd runs, functionfs `ep0/ep1/ep2` open, host registers a transport — but the
+device **never sends its CNXN reply**, so `adb devices` shows `offline`
+permanently. Host trace:
+
+```
+usb_osx: Found vid=2e2c pid=0631 serial=...   max packet 512
+transport: to remote: [CNXN] host::features=...      <- host sends
+(no "from remote: [CNXN]" ever)                       <- device silent
+```
+
+A working reference transport (a networked device on the same host) does reply.
+So this is the gun's old adbd not completing the handshake with a modern host
+adb (1.0.41), not a config problem — boot order is already correct. **Second
+downside:** boot-launched adbd floods the `J2/J3` serial console with its stderr,
+degrading the primary recovery channel. Not worth keeping enabled.
+
+### MSC — composes but the host binds no disk
+
+`CFG_MSC_ENABLE=1` with a corrected `g_msc.sh` (the stock one `mount`s the
+backing store and its `error_info` does `exit 1` on failure, which aborts the
+*entire* gadget for a raw block device). The fixed version points `lun.0/file`
+straight at `/dev/nandblk` read-only, no mount. Result: the gadget composed
+`hid.1 hid.2 hid.3 mass_storage.0 uvc.0`, `Mass Storage Function` registered, the
+config enumerated — **but macOS bound no disk.** No endpoint error is logged, yet
+the storage BOT interface is non-functional in the full composition.
+
+The earlier working NAND dump (§17) was `hid + msc` with **UVC removed**. So MSC
+appears to work only when UVC is dropped — most likely a UDC resource limit with
+`hid×3 + uvc + msc`. Dropping UVC to gain permanent storage is a real trade-off
+(the console/games may require the UVC interface's presence), so it is left to a
+deliberate decision rather than done here.
+
+### Conclusion
+
+The practical, proven ways to reach the gun remain the **on-demand** ones: the
+mass-storage swap used for the backup (§17), and the `J3` serial console. A
+permanent USB shell would need either a newer adbd or a small custom
+CNXN-speaking gadget; permanent USB storage would need UVC dropped from the
+composition.
+
+### Two tooling fixes this shook out
+
+- `uart_push.py` created files with the shell's default umask, so a pushed
+  **executable lost its `+x`**. Restoring `gadget_ctrl.sh` this way left it
+  non-executable, and at boot `S30usb-gadget` failed to run it (`rc=126`,
+  Permission denied) — which silently composes **no** USB gadget at all
+  (recovered over serial with `chmod` + manual `--start`). `uart_push.py` now
+  reapplies the source file's mode. (OTA push does not have this bug — the gun's
+  `update_file` chmods 0777.)
+- `gun_ota.py` gained a guarded `reboot` (system func 5/0), which was the
+  reliable way to reboot when the serial shell was wedged by adbd noise. Pushing
+  the pristine config back over the **HID OTA channel** and rebooting that way is
+  what reverted the whole experiment without touching the degraded serial line —
+  a good demonstration that the OTA path is a real independent control channel.

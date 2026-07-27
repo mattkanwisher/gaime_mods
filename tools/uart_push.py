@@ -71,6 +71,14 @@ def main() -> None:
         cmd(fd, f"base64 -d {stage} > {remote}", settle=1.5)
         cmd(fd, f"rm -f {stage}", settle=0.5)
 
+        # `base64 -d > file` creates the file with the shell's default umask, so
+        # it never carries the source's execute bit. A pushed script that the
+        # system then tries to *run* (e.g. an init-invoked gadget_ctrl.sh) fails
+        # with "Permission denied" and, on this device, silently breaks USB at
+        # boot. Reapply the source file's mode so a pushed executable stays one.
+        mode = os.stat(local).st_mode & 0o777
+        cmd(fd, f"chmod {mode:o} {remote}", settle=0.4)
+
         # Decoding a few MB takes a while and the reply can arrive well after the
         # first drain returns, so poll for the digest instead of assuming a fixed
         # settle. Without this a perfectly good transfer reports as a mismatch.

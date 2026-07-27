@@ -258,6 +258,8 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("status", help="read transfer state (read-only)")
+    rb = sub.add_parser("reboot", help="reboot the gun (system command func 5/0)")
+    rb.add_argument("--yes", action="store_true", help="required confirmation")
     g = sub.add_parser("get", help="read a system_info.json key (read-only)")
     g.add_argument("key")
     sub.add_parser("version", help="read model/fw version (read-only)")
@@ -279,6 +281,12 @@ def main():
             op_version(h, dev)
         elif args.cmd == "push":
             op_push(h, dev, args.local, args.remote, args.chunk_delay)
+        elif args.cmd == "reboot":
+            if not args.yes:
+                sys.exit("refusing without --yes (this reboots the gun)")
+            # func 5 index 0 -> handle_system_command case 0 -> reboot(). No reply.
+            txn(h, dev, frame(0x05, 0), read=False)
+            print("reboot command sent (system func 5/0)")
     finally:
         h.hid_close(dev)
 
