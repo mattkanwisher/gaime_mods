@@ -1480,3 +1480,155 @@ kernel, so `g_rndis.sh` would not work as shipped; ADB and MSC would.
 
 Extraction on macOS: `brew install squashfs e2fsprogs`, then `unsquashfs` for `root_sq` and
 `debugfs -R "rdump / out" app.img` for the ext4 partitions.
+
+## 19. How the tracking actually works
+
+From `libnn_gaime.so` (129 KB) and `/app/bin/gun` (72 KB) in the dump.
+
+### The exported C API
+
+```
+nna_gaime_open / nna_gaime_close / nna_gaime_process
+nna_gaime_calibration
+nna_get_xy                      <- the aim point
+create/free/copy/add/subtract/multiply/transpose/invert/scale_matrix
+```
+
+Hand-rolled matrix arithmetic including **transpose and invert** is a homography solve —
+map the four detected screen corners onto screen coordinates.
+
+### The pipeline, from the C++ internals
+
+```
+ImageProcessor::getInstance()                 singleton
+ImageProcessor::preprocessImg(cv::Mat)
+ImageProcessor::main_process(cv::Mat, float)
+ImageProcessor::compute_weighted_centroid(cv::Mat, int)
+get_screen_properties(cv::Mat)
+ImageProcessor::calibrate_point(cv::Point2f)
+ImageProcessor::get_calibration_mat()
+ImageProcessor::Save/ReadCalibrationMatrixToFile()
+rotateImage(cv::Mat, double) · fitted_sin/fitted_cos · radiansToDegrees
+```
+
+`compute_weighted_centroid` is the tell: the NPU emits a **heat map**, and the intensity
+weighted centroid of each blob gives **sub-pixel** corner locations — far better than the
+integer grid the network outputs. `fitted_sin`/`fitted_cos` are polynomial approximations,
+i.e. trig cheap enough for a 100+ Hz loop on a Cortex-A7.
+
+It is built on **OpenCV** (`cv::Mat`, `cvflann`) and **Eigen**.
+
+### Plus an IMU fusion stage
+
+`/app/bin/gun` carries the **x-io Fusion AHRS** library outright:
+
+```
+FusionAhrsUpdate · FusionAhrsUpdateNoMagnetometer · FusionAhrsUpdateExternalHeading
+FusionOffsetUpdate · imu_AHRSUpdate · comp_kalman_filter_update
+```
+
+So aim = NPU screen-corner detection -> homography -> **IMU-fused, Kalman-filtered** point.
+That is a considerably more serious pipeline than "camera finds a white border".
+
+**Correction to §18.** §18 said the LSM6DS3 "is not present" because the kernel driver fails
+to probe (`i2c-2 ... device addr: 0x6a ... no ask for the 7bit address`). That was too
+strong. The gun binary opens **`/dev/I2C2_LSM6DS3`** and `/dev/i2c-2` and drives the part
+from userspace, and the whole Fusion AHRS stack is compiled in. The kernel probe failing is
+consistent with userspace owning the device rather than with an absent part. Presence is
+**unresolved**; the software plainly expects one.
+
+### Inference engine
+
+`libnn.so` is **OpenVX** (`_vx_context`, `_vx_graph`, `_vx_tensor_t`) — the Verisilicon
+style NPU interface: `LoadNetModel`, `LoadNetModelFromMem`, `CreateNetGraph`,
+`GetNetInputBlob`, `GetNetOutputBlob`, `GetNetModelVersion`.
+
+The N7V5 is really a **face-recognition SoC** and the light gun is bolted onto that SDK —
+the rootfs ships `libnn_facedet`, `facerecg`, `facepos`, `faceattr`, `faceocclude`,
+`faceclarity`, `facetrk`, `liveness`, `humdet`, `humtrk`, `mbgs`, and a `/face` directory.
+`libnn_gaime.so` is the one bespoke member.
+
+### The model files (not yet decoded)
+
+```
+gaime.ezb   142712 B   magic "eezb", entropy 5.744   network description
+gaime.bin  1227780 B   magic "eezb", entropy 7.990   weights
+```
+
+Both share a 16-byte header: `65 65 7a 62 | 96 62 34 01 | "0x002"`. **Entropy 7.990 means
+`gaime.bin` is encrypted or compressed**, not raw tensors. The literal `eezb` magic appears
+in *no* library, so the loader does not compare it as a string — extracting weights means
+reversing `LoadNetModel` in `libnn.so`. Not attempted.
+
+### Hardware the gun binary touches
+
+```
+/dev/video3                              ISP path used for CV
+/dev/hidg0, hidg1, hidg2                 the three HID gadget endpoints
+/dev/i2c-2, /dev/I2C2_LSM6DS3            IMU
+/sys/class/pwm/pwmchip0/pwm5/*           recoil motor (CN1 "Motor" on the PCB)
+/sys/class/gpio/*                        LEDs / trigger
+/app/model/gaime/gaime.{ezb,bin}         the network
+/app/system_info.json                    fw.ver, model.ver
+```
+
+## 20. Updates: over USB after all — §7a was wrong
+
+**§7a concluded the gun has no update path. That is wrong**, and the error was assuming an
+update needs its own USB interface. It rides on the **HID vendor interface** (interface 2,
+usage page `0xFF00`) that §6 already characterised.
+
+`/app/bin/gun` implements the whole thing — `ota_upgrade`, `md5_file`, `md5_to_hex`,
+`verify_and_update`, `perform_verification_and_update`, `update_file` — and logs every step
+under a `[hid_handler]` prefix:
+
+```
+[hid_handler]Invalid Connect Confirm Frame Index
+[hid_handler]Got File Path: %s
+[hid_handler]Got File MD5
+[hid_handler]Invalid Frame Length Info
+[hid_handler]Total Frames: %u
+[hid_handler]Verify Temp File Result: %s
+[hid_handler]MD5 verification failed. Expected:
+[hid_handler]Current Update Result Query: %s
+[hid_handler] Reboot Device
+[hid_handler] Factory Reset: Factory Reset Device
+[hid_handler] Clear Cache
+[hid_handler]Error: Invalid calibration data frame index: %d
+```
+
+So a host can, over plain USB HID: open a session, **name a destination path**, declare a
+length and MD5, stream the file in numbered frames to `/app/temp_file.bin`, ask the gun to
+verify it, trigger `ota_upgrade`, poll the result, and issue **reboot / factory reset /
+clear cache**. Versions come from `/app/system_info.json` (`fw.ver` = v2.5.1,
+`model.ver` = v1.0.1).
+
+**Also correct §6.** Sub-function 7 was read as "a bit-packed MD5 validation result — almost
+certainly an anti-counterfeit handshake." It is far more likely the **MD5 step of this OTA
+flow**. The console therefore has gun-OTA capability wired up, even though no gun firmware
+blob ships in any console image (§7a) — so the capability is present and unused.
+
+### The other, unwired mechanism
+
+`/usr/bin/fw_upgrade` (12 KB) opens `/dev/char/misc`, falling back to `/dev/block/misc`,
+then erases and writes it and reboots — the classic "write a boot command to `misc`, let
+the bootloader apply it" pattern. `/usr/bin/fw_ab_upgrade` (26 KB) adds a package format
+with a string table and per-item hashes (`unpack_isvalid`, `unpack_get_item_byname`,
+`unpack_get_item_hash`, `unpack_get_item_filelen`, `strtab_*`) for A/B slots.
+
+**Nothing invokes either one** — no init script, no daemon, no console code. They ship
+unused; the live path is the gun binary's own HID OTA.
+
+### Security note
+
+The host supplies the destination path (`Got File Path: %s`) and `/app/bin/gun` runs as
+**root**, so this is effectively an arbitrary-file-write primitive reachable over USB HID
+with no pairing or authentication beyond a CRC-16. It is the vendor's intended update
+channel, and it is also why §7a's advice against blind-scanning sub-function codes was
+right for the correct reason: those codes reboot, factory-reset and overwrite files.
+
+### So: does updating require opening the gun?
+
+**No.** The mechanism is USB HID and needs no disassembly. Opening the gun was necessary
+only to *discover* it — the descriptors advertise nothing, and the protocol is only legible
+from the firmware. What the vendor has never shipped is any gun firmware to install.

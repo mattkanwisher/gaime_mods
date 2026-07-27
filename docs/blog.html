@@ -106,7 +106,7 @@ footer.end a{color:var(--accent)}
   turned out to be a second Linux computer with a deliberately unmarked SoC, an NPU, and
   a root shell on an unpopulated header. Here is everything we found, including the bits
   we got wrong.</p>
-  <p class="meta">2026-07-27 · built from commit <code>6fa9c74</code> ·
+  <p class="meta">2026-07-27 · built from commit <code>001724f</code> ·
   <a href="https://github.com/mattkanwisher/gaime_mods">github.com/mattkanwisher/gaime_mods</a></p>
 </header>
 
@@ -129,7 +129,7 @@ in the chain, so once you understand the image you can also put things back.</p>
     <li>The console: a hardcoded key, a homemade flasher, and a root shell</li>
     <li>The gun: an absolute-positioning light gun that already works on any PC</li>
     <li>Inside the gun: an unmarked LomboTech N7V5, an NPU, and a full firmware dump</li>
-    <li>What's still open</li>
+    <li>How the aiming works, how updates work, and what is still open</li>
   </ol>
 </div>
 
@@ -879,11 +879,127 @@ CFG_RNDIS_ENABLE=0   CFG_MTP_ENABLE=0     CFG_HID_ENABLE=1</code></pre>
 run <code>adbd</code>, which is present in <code>/usr/bin</code>. All the elaborate configfs
 surgery above was reinventing something the vendor had already built and switched off.</p>
 
+<h2><span class="num">19</span>How the aiming actually works</h2>
+
+<p>With the firmware in hand, the algorithm stops being a guess. The exported C API of
+<code>libnn_gaime.so</code>:</p>
+
+<pre><code>nna_gaime_open / nna_gaime_close / nna_gaime_process
+nna_gaime_calibration
+nna_get_xy                      &lt;- the aim point
+
+create/free/copy/add/subtract/multiply/transpose/invert/scale_matrix</code></pre>
+
+<p>Hand-rolled matrix arithmetic including <strong>transpose and invert</strong> is a
+homography solve: map the four detected screen corners onto screen coordinates. The C++
+internals fill in the rest:</p>
+
+<pre><code>ImageProcessor::preprocessImg(cv::Mat)
+ImageProcessor::main_process(cv::Mat, float)
+ImageProcessor::compute_weighted_centroid(cv::Mat, int)
+get_screen_properties(cv::Mat)
+ImageProcessor::calibrate_point(cv::Point2f)
+ImageProcessor::Save/ReadCalibrationMatrixToFile()
+rotateImage · fitted_sin · fitted_cos · radiansToDegrees</code></pre>
+
+<p><code>compute_weighted_centroid</code> is the giveaway. The NPU emits a <strong>heat
+map</strong>, and the intensity-weighted centroid of each blob recovers <strong>sub-pixel</strong>
+corner positions — much finer than the grid the network actually outputs.
+<code>fitted_sin</code> and <code>fitted_cos</code> are polynomial approximations: trig cheap
+enough to run in a 100+ Hz loop on a Cortex-A7. It is built on OpenCV and Eigen.</p>
+
+<p>And there is a stage nobody outside would guess at. <code>/app/bin/gun</code> carries the
+<strong>x-io Fusion AHRS</strong> library outright:</p>
+
+<pre><code>FusionAhrsUpdate · FusionAhrsUpdateNoMagnetometer · FusionOffsetUpdate
+imu_AHRSUpdate · comp_kalman_filter_update</code></pre>
+
+<p>So the aim point is NPU corner detection → homography → <strong>IMU-fused,
+Kalman-filtered</strong>. That is a far more serious pipeline than "a camera finds the edges
+of your telly", and it explains why the thing works at all without an IR bar.</p>
+
+<div class="callout warn">
+<span class="label">Correction</span>
+<p>Earlier I wrote that the LSM6DS3 IMU "is not there" because the kernel driver fails to
+probe it. Too strong. The gun binary opens <code>/dev/I2C2_LSM6DS3</code> and
+<code>/dev/i2c-2</code> and drives the part <em>from userspace</em>, with the entire Fusion
+AHRS stack compiled in — a failed kernel probe is equally consistent with userspace owning
+the device. Presence is unresolved; the software plainly expects one.</p>
+</div>
+
+<h3>The model itself stays shut</h3>
+
+<pre><code>gaime.ezb    142712 B   magic "eezb", entropy 5.744   network description
+gaime.bin   1227780 B   magic "eezb", entropy 7.990   weights</code></pre>
+
+<p><strong>Entropy 7.990 means <code>gaime.bin</code> is encrypted or compressed</strong>,
+not raw tensors, so there is no reading the weights directly. The literal <code>eezb</code>
+magic appears in <em>no</em> library on the device, so the loader isn't string-matching it
+either — extracting the network means reversing <code>LoadNetModel</code> inside
+<code>libnn.so</code>, which is an OpenVX engine talking to the NPU. That is a project in
+itself, and it is where this stops for now.</p>
+
+<p>One aside that explains the whole design: the N7V5 is really a <strong>face-recognition
+SoC</strong>. The rootfs ships <code>libnn_facedet</code>, <code>facerecg</code>,
+<code>facepos</code>, <code>liveness</code>, <code>humdet</code>, <code>humtrk</code> and a
+<code>/face</code> directory. The light gun is <code>libnn_gaime.so</code> bolted onto
+somebody's face-recognition SDK.</p>
+
+<h2><span class="num">20</span>Updates: over USB after all</h2>
+
+<p>Section 14 concluded the gun has no update path. <strong>That was wrong</strong>, and the
+mistake was assuming an update needs its own USB interface. It rides on the <strong>HID
+vendor interface</strong> — the same <code>0xFF00</code> endpoint we had already decoded from
+the console side in section 11.</p>
+
+<p><code>/app/bin/gun</code> implements the lot — <code>ota_upgrade</code>,
+<code>md5_file</code>, <code>verify_and_update</code>, <code>update_file</code> — and helpfully
+logs every step:</p>
+
+<pre><code>[hid_handler]Invalid Connect Confirm Frame Index
+[hid_handler]Got File Path: %s
+[hid_handler]Got File MD5
+[hid_handler]Total Frames: %u
+[hid_handler]Verify Temp File Result: %s
+[hid_handler]Current Update Result Query: %s
+[hid_handler] Reboot Device
+[hid_handler] Factory Reset: Factory Reset Device
+[hid_handler] Clear Cache</code></pre>
+
+<p>So over plain USB HID a host can open a session, <strong>name a destination path</strong>,
+declare a length and an MD5, stream the file in numbered frames, ask the gun to verify it,
+trigger the upgrade, poll the result, and issue reboot, factory reset or cache clear.</p>
+
+<p>That also re-reads an earlier finding. Sub-function 7 — which section 11 called "a
+bit-packed MD5 result, almost certainly an anti-counterfeit handshake" — is far more likely
+<strong>the MD5 step of this OTA flow</strong>. The console has gun-update capability wired
+up and simply no firmware to push.</p>
+
+<p>There is a second, entirely unwired mechanism too: <code>fw_upgrade</code> writes a
+command to the <code>misc</code> partition and reboots so the bootloader can apply it, and
+<code>fw_ab_upgrade</code> adds a package format with a string table and per-item hashes for
+A/B slots. <strong>Nothing invokes either.</strong> They ship unused.</p>
+
+<div class="callout warn">
+<span class="label">Worth stating plainly</span>
+<p>The host chooses the destination path, and <code>/app/bin/gun</code> runs as <strong>root</strong>.
+That makes this an arbitrary-file-write primitive reachable over USB HID with no pairing and
+no authentication beyond a CRC-16. It is the vendor's intended update channel — and it is
+also why the earlier advice against blind-scanning sub-function codes was right, for a better
+reason than I had at the time: those codes reboot the device, factory-reset it, and overwrite
+files.</p>
+</div>
+
+<p><strong>So does updating the gun require opening it?</strong> No. The mechanism is USB and
+needs no disassembly at all. Opening it was necessary only to <em>discover</em> the
+mechanism — the USB descriptors advertise nothing, and the protocol is legible only from the
+firmware. What the vendor has never shipped is any gun firmware to install.</p>
+
 <!-- ══════════════════════════════════════════════════════════════ END -->
 
 <hr>
 
-<h2><span class="num">19</span>What's still open</h2>
+<h2><span class="num">21</span>What's still open</h2>
 
 <p><strong>adb is not yet permanent.</strong> The fix is a genuine one-byte revert of
 <code>ro.secure=0</code> back to <code>1</code> at a known sector, keeping
