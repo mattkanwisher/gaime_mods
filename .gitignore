@@ -10,3 +10,6 @@ docs/photos/IMG_*.jpeg
 
 # APK build output
 apps/*/out/
+
+# app signing keys stay local
+apps/*/debug.keystore

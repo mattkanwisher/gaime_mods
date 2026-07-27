@@ -38,7 +38,10 @@ cp "$OUT/base.apk" "$OUT/unsigned.apk"
 (cd "$OUT" && zip -q unsigned.apk classes.dex)
 
 echo "== sign =="
-KS="$OUT/debug.keystore"
+# Keystore lives outside out/ so rebuilds keep the same signing identity;
+# a fresh key each build makes `adb install -r` fail with
+# INSTALL_FAILED_UPDATE_INCOMPATIBLE.
+KS="$HERE/debug.keystore"
 keytool -genkeypair -keystore "$KS" -storepass android -keypass android \
     -alias gaime -keyalg RSA -keysize 2048 -validity 10000 \
     -dname "CN=GAIME Hello, O=gaime_mods, C=GB" >/dev/null 2>&1

@@ -25,6 +25,17 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- HOME so this can replace the kiosk launcher as the default. The
+                 kiosk app stays installed and enabled, so it is still launchable
+                 on purpose from the Apps list — it just stops being where every
+                 home press lands. Reversible with:
+                   adb shell cmd package set-home-activity \
+                       com.dashine.hidcommunication/.MainActivity -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
     </application>
 </manifest>
