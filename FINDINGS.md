@@ -1100,3 +1100,37 @@ adapter TX   ->  J2 RX      (omit for a safe receive-only capture)
 Set the adapter to 3.3 V, or — if in any doubt — connect only `GND` and `J2 TX` first. That is
 receive-only, cannot damage anything, and still yields the full boot log, which is most of the
 diagnostic value. Add the TX wire afterwards for an interactive shell.
+
+### UART confirmed working on J2
+
+First capture off header `J2` at 115200 8N1, receive-only (adapter `RXD` ← `J2 TX`, grounds
+common, both adapter power pins left disconnected — on a CP2102 board `3V3` and `+5V` are
+power *outputs*, not a logic-level selector, and the CP2102's own TX is 3.3 V so it is safe
+against the A523 directly).
+
+```
+[143]HELLO! BOOT0 is starting!      BOOT0 commit : 1cbb5ea8b3
+[160]PMU: AXP2202                   [165]PMU: AXP1530
+[286]enable_jtag
+[349][mmc]: MMC 5.1                 [357][mmc]: 59640 MB
+[377]DRAM CLK =1200 MHZ             DRAM Type =8 (LPDDR4)
+[550]Jump to second Boot.
+NOTICE:  BL31: v2.5(debug):55b180a27, Built : 11:09:52, Sep 18 2023
+NOTICE:  [SCP] :sunxi-arisc driver is starting
+```
+
+Three things this settles:
+
+- **`enable_jtag` is printed by BOOT0**, so the `J3` JTAG header is live rather than fused off.
+- **59640 MB** independently corroborates the 58.24 GiB eMMC measured over FES (§ dump).
+- The boot chain is BOOT0 → **BL31 (ARM Trusted Firmware v2.5)** → SCP/arisc → U-Boot, which is
+  why a bare `u-boot.fex` is only part of the story and `boot_package.fex` exists.
+
+A plain `cat /dev/cu.*` truncated the log exactly at the U-Boot handoff — the process exits on
+the first hiccup. `tools/uart_watch.sh` reopens and appends instead, and keeps the macOS quirk
+handled: termios on `/dev/cu.*` reverts the moment the last fd closes, so `stty` and the read
+must share one descriptor or the port silently drops to 9600.
+
+**Note:** the `SW1`/FEL button snapped off during disassembly. Not fatal — it is a momentary
+switch, so briefly shorting its pads (or the adjacent `T35`/`T36` test points) does the same
+thing. The UART is in any case the better access path for everything except writing flash.

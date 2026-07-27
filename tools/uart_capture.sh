@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
-# Capture a boot log from the gun's J3 UART header, or work out its baud rate.
-# No dependencies — uses stty and cat.
+# Capture a boot log over UART, or work out the baud rate. No dependencies.
 #
-# The gun's SoC is unmarked (FINDINGS.md section 10), so the boot log is the only
-# way to identify it. J3 is four through-holes labelled GND / TX / RX / V3.3.
+# Two targets on this project, same mechanics:
+#
+#   CONSOLE  header J2 on LBQ-1585-A-V1.1, labelled GND / TX / RX (FINDINGS §14).
+#            Runs at 115200 — `console=ttyAS0,115200` is already in the U-Boot
+#            env, and ro.debuggable=1 is already on flash, so this should land
+#            on a root shell rather than just a log.
+#   GUN      header J3, four holes labelled GND / TX / RX / V3.3 (FINDINGS §10).
+#            SoC is unmarked, so the boot log is the only way to identify it and
+#            the baud rate is unknown — use `scan`.
 #
 # Wiring — two wires are enough to READ:
-#     J3 GND -> adapter GND
-#     J3 TX  -> adapter RX        (they cross)
-# Leave J3 V3.3 unconnected; the board powers itself from its own USB cable.
-# Only add  J3 RX <- adapter TX  when you want to type at the bootloader.
+#     board GND -> adapter GND
+#     board TX  -> adapter RX        (they cross)
+# Leave the board's 3.3 V pin unconnected, and on the adapter side leave BOTH
+# 3V3 and +5V unconnected — on a CP2102/CH340 module those are power outputs,
+# not a logic-level selector. Each board powers itself from its own USB cable.
+# Only add  board RX <- adapter TX  when you want to type.
 #
 # Usage:
 #   tools/uart_capture.sh list
