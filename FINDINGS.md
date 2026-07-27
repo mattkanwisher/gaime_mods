@@ -1040,3 +1040,63 @@ attempts is enough; **the debug UART is the only remaining route** (PB09 TX / PB
 115200). `console=ttyAS0,115200` is already in the bootargs and `ro.debuggable=1` is already
 applied, so `service console /system/bin/sh` should offer a root shell as soon as a serial
 adapter is attached — the diagnosis and the shell in the same step.
+
+## 14. Console teardown — the debug UART is a labelled 3-pin header
+
+Board opened 2026-07-26. No public teardown of this device existed before this.
+
+```
+LBQ-1585-A-V1.1      2025-7-23
+```
+
+**Component side.** Allwinner A523 under a large black pin-fin heatsink; eMMC in the
+package immediately right of it (silkscreened `EMMC`). USB-C at top left silkscreened
+**`POWIN`** — this is the power/FEL port we have been driving. HDMI is `J1`. `SW2` is
+silkscreened **`AP-RESET`**. `UP1` is a ~20-pin IC on the left (PMIC, consistent with the
+AXP2202 in the boot log), with `UP5`/`UP8` smaller regulators and crystal `Y2`.
+
+Three unpopulated headers along the right edge, all clearly labelled:
+
+| Header | Pins | Notes |
+|---|---|---|
+| **`J2`** | `GND` · `TX` · `RX` | **the debug UART** — through-holes, no fine-pitch soldering |
+| `J3` | `+` · `TDI` · `TMS` · `TCK` · `TDO` · `GND` | full **JTAG** |
+| `J4` | `GND` · `GND` · `GND` | extra grounds |
+
+**Solder side.** `SW1` is silkscreened **`FEL`** — the pinhole programming button, named for
+exactly what it does. `U2` is the FFC connector to the front panel (the gun USB-C ports).
+Test points `T1`–`T18`, `T35`/`T36` beside SW1, and many `CP*` pads.
+
+### Why this matters
+
+§12 established that FES exposes no console output, and §13 stopped after five blind patches
+precisely because nothing could be observed. `J2` removes that limitation entirely, and it is
+a plain 3-pin 0.1" header rather than pads that need microscope work.
+
+`console=ttyAS0,115200` is already in the bootargs and `ro.debuggable=1` is already written to
+flash, so `service console /system/bin/sh` should present a **root shell** as soon as an
+adapter is attached — diagnosis and shell in one step. That settles all four open unknowns
+from §13 with about four commands:
+
+```
+cat /proc/modules | grep udc          # does sunxi_usb_udc.ko load at all?
+ls /sys/class/udc                     # the real UDC name
+getprop | grep -E 'usb|debuggable'    # did our properties actually apply?
+dmesg | grep -iE 'udc|gadget|usbc0'   # what the gadget is doing
+```
+
+### Wiring, and one hardware caution
+
+Cross TX and RX; leave the adapter's power pin disconnected — the board is self-powered:
+
+```
+adapter GND  ->  J2 GND
+adapter RX   ->  J2 TX
+adapter TX   ->  J2 RX      (omit for a safe receive-only capture)
+115200 8N1, no flow control
+```
+
+**The A523's UART pins are 3.3 V.** A 5 V TTL adapter driving `J2 RX` can damage the SoC.
+Set the adapter to 3.3 V, or — if in any doubt — connect only `GND` and `J2 TX` first. That is
+receive-only, cannot damage anything, and still yields the full boot log, which is most of the
+diagnostic value. Add the TX wire afterwards for an interactive shell.
