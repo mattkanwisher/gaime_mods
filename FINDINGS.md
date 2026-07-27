@@ -1429,7 +1429,15 @@ Everything above is **configfs and process state — RAM only.** Nothing touches
 LUN is read-only, and `S30usb-gadget` rebuilds the stock gadget at boot; the accidental
 reboot demonstrated that, coming back as `uvc.0` + `hid.1/2/3` unaided.
 
-Host sees 83,091,456 bytes matching `nandblk` exactly, GPT in **2048-byte sectors**:
+Host sees 83,091,456 bytes matching `nandblk` exactly, GPT in **2048-byte sectors**.
+**Verified end to end** — the gun computed the digest of the block device itself and it
+matches the host's copy:
+
+```
+gun:    03c2ea90ad6098d39c651c9279933449  /dev/nandblk
+local:  03c2ea90ad6098d39c651c9279933449  backup/gun/nandblk.img
+```
+
 
 | Partition | Offset | Size | Contents |
 |---|---|---|---|
