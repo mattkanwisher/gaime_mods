@@ -1192,3 +1192,27 @@ its pads (or `T35`/`T36` beside it) works.
 
 Kernel, for the record: `Linux 5.15.119`, built `root@dashine-namco`, Fri Sep 12 2025,
 `Machine model: sun55iw3`, CPU `0x412fd050` (Cortex-A55).
+
+## 16. Fastboot is reachable in software (but is the wrong tool for a one-byte fix)
+
+`adb reboot bootloader` lands in U-Boot's fastboot loop. The gadget appears as
+**`1f3a:1010` "sunxi"**, serial `90275779908287d1ed4` — the same serial adb reports, derived
+from the chip SID. U-Boot has the full implementation: `Android Fastboot`,
+`fastboot - enter USB Fastboot protocol`, `reboot-fastboot`, `fastboot oem`, lock/unlock
+flags, and a `fastbootlogo.bmp` that is present in `bootloader_a`.
+
+So there **is** a software route into a flashing mode — no FEL, no shorting pads. Two caveats:
+
+- Google's `fastboot` will not talk to it. Modern platform-tools matches on the USB interface
+  class/subclass/protocol (`0xff/0x42/0x03`) and dropped the `-i <vid>` override; Allwinner's
+  gadget does not advertise those. `tools/fastboot_client.py` speaks the protocol directly, but
+  currently fails at `libusb_get_active_config_descriptor` on this device — unfinished.
+- Even working, fastboot flashes whole partitions. The pending fix is **one byte inside
+  `super`**, so this route would mean pushing 3.5 GB to change it, against one 512-byte sector
+  over FES.
+
+Fastboot is therefore the right tool for writing a *whole rebuilt image* later, and the wrong
+one for this. Recorded because the software route into it is genuinely useful to know.
+
+**Note:** the console is left sitting in fastboot after `adb reboot bootloader`; it does not
+print to the UART in that mode. Power-cycling returns it to Android.
