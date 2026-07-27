@@ -1,0 +1,16 @@
+{
+	"fw":	{
+		"update_date":	"2025-01-01",
+		"ver":	"v2.5.1"
+	},
+	"model":	{
+		"ver":	"v1.0.1",
+		"update_date":	"2025-01-01"
+	},
+	"sn":	{
+		"num":	"12345"
+	},
+	"main":	{
+		"status":	"enable"
+	}
+}

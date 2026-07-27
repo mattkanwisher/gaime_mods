@@ -1,0 +1,8 @@
+#!/bin/sh
+
+case "$1" in
+  start)
+	  echo 0 > /sys/class/misc/memctrl/monitor0/global_enable
+    ;;
+esac
+

@@ -1,0 +1,21 @@
+#!/bin/sh
+APP_SHELL=/app/shell/app.sh
+
+# 检查文件是否存在并赋权
+if [ -f "$APP_SHELL" ]; then
+    chmod +x $APP_SHELL
+else
+    echo "Error: $APP_SHELL not found!"
+    exit 1
+fi
+
+case "$1" in
+	start)
+		$APP_SHELL start
+		;;
+	stop)
+		$APP_SHELL stop
+		;;
+	*)
+		;;
+esac

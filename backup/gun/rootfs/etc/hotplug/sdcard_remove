@@ -1,0 +1,17 @@
+#!/bin/sh
+
+MOUNT_POINT=/mnt/card
+
+grep ${MDEV} /proc/mounts
+if [ $? -ne 0 ]; then
+	echo "${MDEV} not mounted" > /dev/console
+	exit
+fi
+
+umount $MOUNT_POINT
+
+if [ $? -eq 0 ]; then
+	echo "${MDEV} umount sdcard ok" > /dev/console
+else
+	echo "${MDEV} umount sdcard failed" > /dev/console
+fi

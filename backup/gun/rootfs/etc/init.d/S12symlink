@@ -1,0 +1,202 @@
+#!/bin/sh
+
+ROOT_DEV=nandblk2
+MASTER_DEV=nandblk
+PART_DEV=nandblk1
+PART_NAME=userdata
+
+get_root_dev()
+{
+	ROOT_DEV=$(cat /proc/cmdline)
+	ROOT_DEV=${ROOT_DEV#*root=}
+	ROOT_DEV=${ROOT_DEV%% *}
+	ROOT_DEV=${ROOT_DEV#*/dev/}
+}
+
+get_master_blkdev()
+{
+	if [ "x${ROOT_DEV%%k*}" == "xmmcbl" ]; then
+		MASTER_DEV=${ROOT_DEV%%p*}
+	elif [ "x${ROOT_DEV%%k*}" == "xnandbl" ]; then
+		MASTER_DEV=${ROOT_DEV%%k*}k
+	elif [ "x${ROOT_DEV%%k*}" == "xnorbl" ]; then
+		MASTER_DEV=${ROOT_DEV%%k*}k
+	else
+		echo "rootdev($ROOT_DEV) is not blkdev"
+		return 1
+	fi
+}
+
+get_master_mtddev()
+{
+	if [ "x${ROOT_DEV%%k*}" == "xmtdbloc" ]; then
+		MASTER_DEV=${ROOT_DEV%%k*}k
+	else
+		echo "rootdev($ROOT_DEV) is not mtddev"
+		return 1
+	fi
+}
+
+ln_blockdev_part()
+{
+	# echo "start get block part_dev"
+	ls /sys/block/$1 | grep $1 | while read PART_DEV
+	do
+		if [ "x${PART_DEV}" == "x${ROOT_DEV}" ]; then
+			if [ -b /dev/${ROOT_DEV} ]; then
+				 echo "setblkro ${ROOT_DEV}"
+				/sbin/setblkro /dev/${ROOT_DEV}
+			fi
+			continue
+		fi
+
+		PART_UEVENT=/sys/block/$1/${PART_DEV}/uevent
+		# echo "part uevent: $PART_UEVENT"
+
+		if [ ! -e ${PART_UEVENT} ]; then
+			echo "${PART_UEVENT} is not exist, part_dev: ${PART_DEV}"
+			return 1
+		fi
+
+		cat ${PART_UEVENT} | grep "PARTNAME=" | while read PART_NAME
+		do
+			if [ "x${PART_NAME%%=*}" == "xPARTNAME" ]; then
+				PART_NAME=${PART_NAME#*PARTNAME=}
+				# echo "part_name: ${PART_NAME}"
+
+				LINK_FROM=/dev/${PART_DEV}
+				LINK_TO=/dev/block/${PART_NAME}
+				if [ ! -e ${LINK_TO} ]; then
+					ln -s ${LINK_FROM} ${LINK_TO}
+					if [ $? -ne 0 ]; then
+						echo "symlink ${LINK_FROM} to ${LINK_TO} fail"
+						return 1
+					fi
+				else
+					echo "${LINK_TO} is exist, want_from: ${LINK_FROM}"
+					return 1
+				fi
+			else
+				echo "invalid part_name: ${PART_NAME}"
+				return 1
+			fi
+			break;
+		done
+	done
+}
+
+ln_block_part()
+{
+	ln_blockdev_part $MASTER_DEV
+}
+
+ln_nandblk_part()
+{
+	ls /sys/block/nandblk
+	if [ $? -eq 0 ]; then
+		ln_blockdev_part nandblk
+	fi
+}
+
+ln_mtd_part()
+{
+	if [ ! -d /dev/char ]; then
+		mkdir -p /dev/char
+		if [ $? -ne 0 ]; then
+			echo "mkdir /dev/char fail"
+			return 1
+		fi
+	fi
+
+	ls /sys/block | grep mtd* | while read PART_DEV
+	do
+		if [ "x${PART_DEV}" == "x${ROOT_DEV}" ]; then
+			if [ -b /dev/${ROOT_DEV} ]; then
+				 # echo "setblkro ${ROOT_DEV}"
+				/sbin/setblkro /dev/${ROOT_DEV}
+			fi
+			continue
+		fi
+
+		PART_DEVICE=/sys/block/$PART_DEV/device/name
+
+		if [ ! -e $PART_DEVICE ]; then
+			echo "${PART_DEVICE} is not exist, part_dev: ${PART_DEV}"
+			return 1
+		fi
+
+		cat $PART_DEVICE | while read PART_NAME
+		do
+			LINK_FROM=/dev/$PART_DEV
+			LINK_TO=/dev/block/${PART_NAME}
+
+			LINK_FROM_CHAR=/dev/mtd${PART_DEV#*k}
+			LINK_TO_CHAR=/dev/char/${PART_NAME}
+
+			if [ ! -e ${LINK_TO} ]; then
+				ln -s ${LINK_FROM} ${LINK_TO}
+				if [ $? -ne 0 ]; then
+					echo "symlink ${LINK_FROM} to ${LINK_TO} fail"
+					return 1
+				fi
+			else
+				echo "${LINK_TO} is exist, want_from: ${LINK_FROM}"
+				return 1
+			fi
+
+			if [ ! -e ${LINK_TO_CHAR} ]; then
+				ln -s ${LINK_FROM_CHAR} ${LINK_TO_CHAR}
+				if [ $? -ne 0 ]; then
+					echo "symlink ${LINK_FROM_CHAR} to ${LINK_TO_CHAR} fail"
+					return 1
+				fi
+			else
+				echo "${LINK_TO_CHAR} is exist, want_from: ${LINK_FROM_CHAR}"
+				return 1
+			fi
+
+		done
+
+	done
+}
+
+ln_part()
+{
+	if [ ! -d /dev/block ]; then
+		mkdir -p /dev/block
+		if [ $? -ne 0 ]; then
+			echo "mkdir /dev/block fail"
+			return 1
+		fi
+	fi
+
+	get_root_dev
+	get_master_blkdev
+	if [ $? -eq 0 ]; then
+		ln_block_part
+		# for nand
+		ln_mtd_part
+	else
+		get_master_mtddev
+		if [ $? -eq 0 ]; then
+			ln_mtd_part
+			# for nand
+			ln_nandblk_part
+		else
+			echo "get_master_dev fail"
+			return 1
+		fi
+	fi
+}
+
+case "$1" in
+	start)
+		ln_part
+	;;
+
+	stop)
+	;;
+
+	*)
+	;;
+esac

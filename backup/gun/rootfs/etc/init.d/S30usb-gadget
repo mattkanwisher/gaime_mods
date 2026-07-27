@@ -1,0 +1,28 @@
+#!/bin/sh
+LIBDEBUGGER=/usr/lib/libdebugger.so
+LIBASAN=/lib/libasan.so
+USB_GADGET_CTRL_FILE=/app/shell/usb/gadget_ctrl.sh
+
+if [ -f ${LIBASAN} ];then
+	export LD_PRELOAD="$LD_PRELOAD $LIBASAN"
+fi
+
+if [ -f ${LIBDEBUGGER} ];then
+	export LD_PRELOAD="$LD_PRELOAD $LIBDEBUGGER"
+fi
+
+if [ -f ${USB_GADGET_CTRL_FILE} ]; then
+
+case "$1" in
+	start)
+		${USB_GADGET_CTRL_FILE} --start
+		exit 0
+	;;
+
+	stop)
+		${USB_GADGET_CTRL_FILE} --stop
+		exit 0
+	;;
+esac
+
+fi

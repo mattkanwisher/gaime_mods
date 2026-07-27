@@ -1,0 +1,14 @@
+[buildinfo]
+ro.build.id=Virgo
+ro.build.display.id=Virgo
+ro.build.version.incremental=v1.1
+ro.build.date=Thu 09 Oct 2025 10:08:07 AM UTC
+ro.build.date.utc=1760004487
+ro.build.user=dashine
+ro.build.host=gaime-gun-001
+ro.product.model=Virgo on n7v5
+ro.product.brand=Virgo
+ro.product.name=n7v5_alcor_lightgun
+ro.product.device=lightgun
+ro.product.chip=n7v5
+ro.product.manufacturer=unknown

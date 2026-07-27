@@ -1329,3 +1329,146 @@ python3 tools/uart_shell.py run 'pm install -r -g /data/local/tmp/x.apk'
 16805 bytes in 7.7 s (~4-5 KB/s of payload), md5 `a46e82a3…` matching on both sides. Fine for
 an APK, useless for an image. Note the first version reported a false mismatch because it
 assumed a fixed settle for the `md5sum` reply; it now polls for the digest.
+
+## 18. The gun opened up — SoC identified, root shell, full firmware dump
+
+The single biggest unknown in the project is answered. **The unmarked QFN at `U8` is a
+LomboTech N7V5.**
+
+### Getting the boot log off J3
+
+Wired receive-only first (`J3 GND` -> adapter GND, `J3 TX` -> adapter RXD), 115200 8N1.
+Two false starts, both worth recording because neither was a hardware fault:
+
+1. **227 bytes of `0x00`/`0xFF` only — four distinct values, split 50/50.** That is not a
+   baud error (a real stream at the wrong rate gives a broad spread); it is a floating
+   input on ambient EMI. It also excludes the obvious miswires: `GND` would give a
+   continuous `0x00` torrent at 11.5 KB/s, `V3.3` would give silence. The gun simply was
+   not powered — it draws from its own USB cable, which was unplugged.
+2. **Mangled text with runs missing mid-word.** Diagnosed as a `uart_capture.sh` design
+   fault and a Python rewrite was written. **That diagnosis was wrong.** The real cause:
+
+   ```
+   $ lsof /dev/cu.usbserial-0001
+   Python  9986  ...      <- our capture
+   bash    9991  ...      <- uart_watch.sh, 2h48m old, from the console work
+   cat     9993  ...
+   ```
+
+   A `uart_watch.sh` left running from §14 kept reopening the port and taking half the
+   bytes. Two readers on one tty split the stream. **Check `lsof` on the port before
+   blaming a tool.** (`tools/uart_capture.py` was kept anyway — one fd, tight read loop,
+   and it gained the macOS `IOSSIOSPEED` ioctl, since `termios` defines no constant above
+   `B230400` on this platform.)
+
+With the port to ourselves and `adapter TXD -> J3 RX` added, a single newline gives:
+
+```
+# id
+uid=0(root) gid=0(root) groups=0(root),10(wheel)
+```
+
+**Root, no login, no password.** `telnetd` also runs permanently (`Starting telnetd: OK`)
+but has no network interface to listen on.
+
+### What it is
+
+```
+ro.product.chip=n7v5              ro.build.id=Virgo
+ro.product.name=n7v5_alcor_lightgun   ro.build.user=dashine
+ro.product.device=lightgun        ro.build.host=gaime-gun-001
+                                  ro.build.date=Thu 09 Oct 2025 10:08:07 AM UTC
+```
+
+| | |
+|---|---|
+| SoC | **LomboTech N7V5**, ARMv7 `410fc075` = Cortex-A7, 48 BogoMIPS |
+| Kernel | Linux 4.19.73, gcc 7.5.0 (Linaro 2019.12), `#1 PREEMPT` |
+| RAM | **128 MiB**, 56 MiB carved out for the vision pipeline |
+| Flash | GigaDevice SPI NAND, `snc_read_id` -> `c8 91`, 119808 KB |
+| Root | squashfs (read-only), `init=/linuxrc`, BusyBox |
+| Camera | `h63p` MIPI sensor on I2C, ISP registers `/dev/video1`, `video3`, `video4` |
+| Accelerators | `AXNU` (NPU) and `AXVU`, plus an `[N7_VC]` hardware video codec |
+| UART | `ttySLB0 @ 0x4003000`, irq 26, `base_baud = 1500000` |
+
+`ro.build.user=dashine` is the **same ODM as the console**, confirming §2 from the gun side.
+
+**Two corrections to §7a/§9.** The vendor's published spec of **1 GB RAM** is wrong — the
+kernel reports 128 MiB. 1 Gbit is exactly 128 MB, so it reads as a bit/byte conflation of
+the flash size. And "the gun has no update path" was right about the host side but wrong
+about the device: `/usr/bin` carries `fw_upgrade`, `fw_ab_upgrade`, `fw_printenv` and
+`fw_setenv`. Nothing on the console or over USB invokes them, so the vendor still never
+updates the gun in the field.
+
+The `lsm6ds3` driver loads for a **6-axis IMU that is not present** — `i2c-2 ... device
+addr: 0x6a ... no ask for the 7bit address`, repeatedly. Unpopulated on this revision, or
+on another bus.
+
+### The backup — USB mass storage, not a 4-hour serial dump
+
+117 MiB over a 115200 console is ~4 h of base64 and corrupts silently on any glitch. The
+gun is a Linux USB gadget with `CONFIG_USB_CONFIGFS_MASS_STORAGE=y`, so expose the NAND to
+the host read-only instead:
+
+```sh
+cd /sys/kernel/config/usb_gadget/g1
+echo "" > UDC                                     # unbind
+rm -f configs/c.1/uvc.0                           # uvc oopses in uvc_function_bind on re-register
+mkdir -p functions/mass_storage.0
+echo 1            > functions/mass_storage.0/lun.0/ro
+echo /dev/nandblk > functions/mass_storage.0/lun.0/file
+ln -s functions/mass_storage.0 configs/c.1/
+echo lb_hdc.0     > UDC                           # rebind
+```
+
+**First attempt rebooted the gun after ~15 s.** Not the kernel watchdog — a vendor daemon,
+`/app/bin/usb_monitor`, watches the gadget and resets the device when it breaks. Kill that
+and `uvc-gadget` first and the swap holds.
+
+Everything above is **configfs and process state — RAM only.** Nothing touches flash, the
+LUN is read-only, and `S30usb-gadget` rebuilds the stock gadget at boot; the accidental
+reboot demonstrated that, coming back as `uvc.0` + `hid.1/2/3` unaided.
+
+Host sees 83,091,456 bytes matching `nandblk` exactly, GPT in **2048-byte sectors**:
+
+| Partition | Offset | Size | Contents |
+|---|---|---|---|
+| `root_sq` | 16384 | 24 MiB | squashfs — `hsqs` |
+| `private` | 25182208 | 1 MiB | never mounted — **1 MiB of pure zeros** |
+| `cache` | 26230784 | 48 MiB | FAT, empty |
+| `app` | 76562432 | 4 MiB | ext4 |
+| `userdata` | 80756736 | 2.2 MiB | ext4 |
+
+`private` being blank is a real result: whatever per-unit calibration exists, it is not
+stored there.
+
+**Not captured:** the bootloader region below `0x880000`. Only `misc` and `env` are exposed
+as MTD partitions and the boot area sits outside the NFTL device.
+
+### What is in it
+
+```
+bin/gun                  72 KB   ARM ELF — the computer vision process
+bin/usb_monitor         9.8 KB   the thing that rebooted us
+model/gaime/gaime.bin   1.2 MB   NPU model weights
+model/gaime/gaime.ezb    143 KB  network description
+system_info.json                 fw v2.5.1, model v1.0.1, sn "12345"
+```
+
+The aiming is a **72 KB binary driving a 1.2 MB neural network** on the N7V5's NPU.
+
+And the vendor shipped a complete set of gadget scripts behind feature flags —
+`shell/usb/gadget/{g_msc,g_rndis,g_mtp,g_uac1,g_adb,g_uvc,g_hid}.sh`:
+
+```sh
+CFG_UVC_ENABLE=1     CFG_ADB_ENABLE=0     CFG_MSC_ENABLE=0
+CFG_RNDIS_ENABLE=0   CFG_MTP_ENABLE=0     CFG_HID_ENABLE=1
+```
+
+`g_adb.sh` is fully written (create `ffs.adb`, mount functionfs, run `adbd` — which is
+present in `/usr/bin`). **The configfs surgery above reinvented something the vendor had
+already built and switched off.** Note `CONFIG_USB_CONFIGFS_RNDIS` is *not* set in the
+kernel, so `g_rndis.sh` would not work as shipped; ADB and MSC would.
+
+Extraction on macOS: `brew install squashfs e2fsprogs`, then `unsquashfs` for `root_sq` and
+`debugfs -R "rdump / out" app.img` for the ext4 partitions.

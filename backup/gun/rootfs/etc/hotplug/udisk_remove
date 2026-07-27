@@ -1,0 +1,11 @@
+#!/bin/sh
+
+MOUNT_POINT=/mnt/usb
+
+umount -l $MOUNT_POINT
+
+if [ $? -eq 0 ]; then
+	echo "${MDEV} umount usb disk ok" > /dev/console
+else
+	echo "${MDEV} umount usb disk failed" > /dev/console
+fi

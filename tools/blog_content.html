@@ -102,9 +102,10 @@ footer.end a{color:var(--accent)}
 <header class="top">
   <h1>Taking apart the G'AIM'E light gun — both halves of it</h1>
   <p class="standfirst">A ¥13,200 Time Crisis console turned out to ship a hardcoded
-  AES key, no secure boot of any kind, a licensed Namco arcade emulator, and a gun that
-  is secretly a Linux computer with its own camera and 128 MiB of flash. Here is
-  everything we found, including the bits we got wrong.</p>
+  AES key, no secure boot of any kind, and a licensed Namco arcade emulator. The gun
+  turned out to be a second Linux computer with a deliberately unmarked SoC, an NPU, and
+  a root shell on an unpopulated header. Here is everything we found, including the bits
+  we got wrong.</p>
   <p class="meta">{{DATE}} · built from commit <code>{{COMMIT}}</code> ·
   <a href="https://github.com/mattkanwisher/gaime_mods">github.com/mattkanwisher/gaime_mods</a></p>
 </header>
@@ -127,6 +128,7 @@ in the chain, so once you understand the image you can also put things back.</p>
   <ol>
     <li>The console: a hardcoded key, a homemade flasher, and a root shell</li>
     <li>The gun: an absolute-positioning light gun that already works on any PC</li>
+    <li>Inside the gun: an unmarked LomboTech N7V5, an NPU, and a full firmware dump</li>
     <li>What's still open</li>
   </ol>
 </div>
@@ -712,15 +714,176 @@ from descriptors, and cheap to test), or an undocumented sub-function beyond 7 o
 with a writable loader is exactly how a unit becomes a paperweight — derive it from the
 gun's own firmware first, which means getting that UART working.</p>
 
+<div class="callout warn">
+<span class="label">Correction, once we got inside</span>
+<p>"No update path" was right about the <em>host</em> side and wrong about the device. The
+gun's own filesystem carries <code>fw_upgrade</code>, <code>fw_ab_upgrade</code>,
+<code>fw_printenv</code> and <code>fw_setenv</code>. Nothing on the console or over USB
+ever invokes them, so the conclusion that the vendor never updates the gun still holds —
+but the machinery to do it is sitting there.</p>
+</div>
+
+<h2><span class="num">15</span>Three wires, and a root shell</h2>
+
+<p>So: solder to <code>J3</code>. Ground and the board's TX only at first — receive-only
+cannot damage anything, and the boot log was the entire point.</p>
+
+<p>Two things went wrong before anything went right, and both are worth writing down
+because they cost an hour and neither was the hardware's fault.</p>
+
+<p>The first capture came back as 227 bytes of almost nothing: <strong>only four distinct
+byte values, split 50/50 between <code>0x00</code> and <code>0xFF</code></strong>. That is
+not a wrong baud rate — a real stream sampled at the wrong speed gives a broad spread of
+values. It is an undriven input picking up ambient EMI. It also ruled out the obvious
+wiring mistakes: sitting on <code>GND</code> would give a continuous <code>0x00</code>
+torrent, and sitting on <code>V3.3</code> would give silence. Nothing was driving the pin,
+because the gun simply wasn't powered.</p>
+
+<p>The second problem was mine. With the gun powered from the Mac, the log arrived — but
+mangled, chunks missing mid-word with perfect text either side. I assumed a tool bug and
+rewrote the capture in Python. The real cause was that a
+<strong><code>uart_watch.sh</code> from the console work three hours earlier was still
+running</strong>, silently reopening the port and stealing half the bytes. Two readers on
+one tty split the stream between them.</p>
+
+<pre><code>$ lsof /dev/cu.usbserial-0001
+Python  9986  ...  /dev/cu.usbserial-0001
+bash    9991  ...  /dev/cu.usbserial-0001     &lt;- 2h48m old
+cat     9993  ...  /dev/cu.usbserial-0001</code></pre>
+
+<p>With the port to ourselves and the third wire added, one newline was enough:</p>
+
+<pre><code># id
+uid=0(root) gid=0(root) groups=0(root),10(wheel)</code></pre>
+
+<p><strong>A root shell, no login, no password.</strong> The boot log also shows
+<code>Starting telnetd: OK</code> — a telnet daemon runs permanently, it just has no
+network interface to listen on.</p>
+
+<h2><span class="num">16</span>The unmarked chip has a name</h2>
+
+<p>The blank-topped QFN turns out to be a <strong>LomboTech N7V5</strong>. The kernel gives
+it away everywhere — <code>early_lombo</code>, <code>pinctrl_lombo</code>,
+<code>lombo_cccore</code>, <code>lb_hdc</code> — and the rootfs states it outright:</p>
+
+<pre><code>ro.product.chip=n7v5
+ro.product.name=n7v5_alcor_lightgun
+ro.product.device=lightgun
+ro.build.id=Virgo
+ro.build.user=dashine
+ro.build.host=gaime-gun-001
+ro.build.date=Thu 09 Oct 2025 10:08:07 AM UTC</code></pre>
+
+<p><code>ro.build.user=dashine</code> is the same ODM as the console, so both halves of the
+product come from the same shop.</p>
+
+<div class="tablewrap">
+<table>
+<tr><th>SoC</th><td><strong>LomboTech N7V5</strong>, ARMv7 <code>410fc075</code> =
+  Cortex-A7, 48 BogoMIPS</td></tr>
+<tr><th>Kernel</th><td>Linux 4.19.73, gcc 7.5.0 (Linaro), <code>#1 PREEMPT</code></td></tr>
+<tr><th>RAM</th><td>128 MiB, of which <strong>56 MiB is carved out</strong> for the
+  vision pipeline</td></tr>
+<tr><th>Flash</th><td>GigaDevice SPI NAND, ID <code>c8 91</code>, 119808 KB (1 Gbit)</td></tr>
+<tr><th>Root</th><td>squashfs, read-only, <code>init=/linuxrc</code> (BusyBox)</td></tr>
+<tr><th>Camera</th><td><code>h63p</code> MIPI sensor on I²C, ISP exposing
+  <code>/dev/video1/3/4</code></td></tr>
+<tr><th>Accelerators</th><td><code>AXNU</code> (NPU) and <code>AXVU</code>, plus a
+  hardware video codec</td></tr>
+</table>
+</div>
+
+<p>Two corrections fall out of that table. The vendor's published spec says each gun has
+<strong>1 GB of RAM</strong>; the kernel reports 128 MiB. Since 1 Gbit is exactly 128 MB,
+that reads like a bit/byte conflation of the flash size. And the marketing "AI" is real
+rather than a flourish — there is a genuine NPU, with a model file to feed it.</p>
+
+<p>One driver loads for hardware that isn't there: <code>lsm6ds3</code>, a 6-axis IMU. The
+bus is unambiguous about it — <code>i2c-2 … device addr: 0x6a … no ask for the 7bit
+address</code>, over and over. The part is either unpopulated on this revision or on a
+different bus. A gyro would be an obvious aid to aim stabilisation, so it may simply have
+been designed out.</p>
+
+<h2><span class="num">17</span>Backing it up without a 4-hour serial dump</h2>
+
+<p>117 MiB over a 115200 console is about four hours of base64, and any glitch corrupts it
+silently. The gun has a much better pipe: it is a Linux USB gadget, and
+<code>CONFIG_USB_CONFIGFS_MASS_STORAGE=y</code>. So expose the NAND to the host as a
+read-only disk and let USB 2.0 do the work.</p>
+
+<pre><code>cd /sys/kernel/config/usb_gadget/g1
+echo "" &gt; UDC                                    # unbind
+rm -f configs/c.1/uvc.0                          # UVC cannot re-register; drop it
+mkdir -p functions/mass_storage.0
+echo 1           &gt; functions/mass_storage.0/lun.0/ro      # read-only
+echo /dev/nandblk &gt; functions/mass_storage.0/lun.0/file
+ln -s functions/mass_storage.0 configs/c.1/
+echo lb_hdc.0    &gt; UDC                           # rebind</code></pre>
+
+<p>The first attempt rebooted the gun about fifteen seconds in. Not a kernel watchdog —
+a vendor daemon, <strong><code>/app/bin/usb_monitor</code></strong>, which watches the
+gadget and resets the device when it breaks. Kill that and <code>uvc-gadget</code> first
+and the swap holds.</p>
+
+<p>Every one of those changes lives in <strong>configfs and process state, which are
+RAM</strong>. Nothing touches flash, the LUN is read-only, and <code>S30usb-gadget</code>
+rebuilds the stock gadget at boot — which the accidental reboot proved for us, since it
+came back as <code>uvc.0</code> + <code>hid.1/2/3</code> with no intervention.</p>
+
+<p>The Mac then sees an 83,091,456-byte disk, matching <code>nandblk</code> exactly, with a
+readable GPT — in <strong>2048-byte sectors</strong>, which is worth knowing before you
+conclude the partition table is corrupt:</p>
+
+<div class="tablewrap">
+<table>
+<tr><th>Partition</th><th>Size</th><th>Contents</th></tr>
+<tr><td><code>root_sq</code></td><td>24 MiB</td><td>squashfs — the whole userland</td></tr>
+<tr><td><code>cache</code></td><td>48 MiB</td><td>FAT, empty</td></tr>
+<tr><td><code>app</code></td><td>4 MiB</td><td>ext4 — the vendor's own code</td></tr>
+<tr><td><code>userdata</code></td><td>2.2 MiB</td><td>ext4</td></tr>
+<tr><td><code>private</code></td><td>1 MiB</td><td>never mounted — and 1 MiB of pure
+  zeros</td></tr>
+</table>
+</div>
+
+<p><code>private</code> being entirely blank is a small but real result: whatever
+per-unit calibration the gun holds, it is not stored there.</p>
+
+<p>This does not capture the <strong>bootloader region below <code>0x880000</code></strong>
+— the kernel only exposes <code>misc</code> and <code>env</code> as MTD partitions and the
+boot area is outside the NFTL device. That would need raw MTD access or reading the package
+directly.</p>
+
+<h2><span class="num">18</span>What's actually inside</h2>
+
+<p>The 4 MiB <code>app</code> partition is the interesting one:</p>
+
+<pre><code>bin/gun                    72 KB   ARM ELF — the computer vision process
+bin/usb_monitor           9.8 KB   the thing that rebooted us
+model/gaime/gaime.bin     1.2 MB   NPU model weights
+model/gaime/gaime.ezb     143 KB   network description
+system_info.json                   fw v2.5.1, model v1.0.1
+shell/usb/gadget/*.sh              the vendor's own gadget scripts</code></pre>
+
+<p>So the aiming is a <strong>72 KB binary driving a 1.2 MB neural network</strong> on the
+N7V5's NPU. That is the entire product.</p>
+
+<p>And the gadget scripts are the punchline. The vendor shipped a complete set —
+<code>g_msc.sh</code>, <code>g_rndis.sh</code>, <code>g_mtp.sh</code>,
+<code>g_uac1.sh</code>, <code>g_adb.sh</code> — behind feature flags:</p>
+
+<pre><code>CFG_UVC_ENABLE=1     CFG_ADB_ENABLE=0     CFG_MSC_ENABLE=0
+CFG_RNDIS_ENABLE=0   CFG_MTP_ENABLE=0     CFG_HID_ENABLE=1</code></pre>
+
+<p><code>g_adb.sh</code> is fully written — create <code>ffs.adb</code>, mount functionfs,
+run <code>adbd</code>, which is present in <code>/usr/bin</code>. All the elaborate configfs
+surgery above was reinventing something the vendor had already built and switched off.</p>
+
 <!-- ══════════════════════════════════════════════════════════════ END -->
 
 <hr>
 
-<h2><span class="num">15</span>What's still open</h2>
-
-<p><strong>The gun's SoC is unidentified.</strong> Everything downstream — its firmware, the
-CV pipeline, whether the camera can be put into imaging mode — waits on soldering three
-wires to <code>J3</code> and reading the boot log.</p>
+<h2><span class="num">19</span>What's still open</h2>
 
 <p><strong>adb is not yet permanent.</strong> The fix is a genuine one-byte revert of
 <code>ro.secure=0</code> back to <code>1</code> at a known sector, keeping
@@ -729,17 +892,48 @@ wires to <code>J3</code> and reading the boot log.</p>
 The write needs FEL, and the FEL button snapped off during disassembly — it is a momentary
 switch, so briefly shorting its own pads does the same job.</p>
 
-<p><strong>There is no mouse cursor.</strong> Plug a USB mouse into the front port and it
-works — the device enumerates correctly (<code>Classes: CURSOR | EXTERNAL</code>,
-<code>Mode: POINTER</code>), motion tracks, clicks land where you aim. There is simply no
-arrow drawn. The obvious theory was that the vendor blanked the pointer artwork, since the
-games draw their own crosshair, but that is disproved: the pointer bitmaps in
-<code>framework-res.apk</code> are intact and fully opaque. The current lead is that
-SurfaceFlinger has <strong>no <code>Sprite</code> layer at all</strong>, meaning the cursor
-surface is never created in the first place.</p>
+<p><strong>The camera still streams a test pattern</strong> — but the mystery has moved.
+We now know the UVC interface is a configfs gadget driven by a userspace
+<code>uvc-gadget</code> daemon, sitting beside a real MIPI sensor and an ISP that registers
+three <code>/dev/video*</code> nodes. Whether real frames can be routed to the host is now
+a question about userspace on a device we have root on, not a hardware limitation.</p>
+
+<p><strong>The NPU model is unexamined.</strong> <code>gaime.bin</code> and
+<code>gaime.ezb</code> are 1.3 MB of undocumented format, and they are the actual aiming
+algorithm.</p>
+
+<p><strong>The bootloader region</strong> below <code>0x880000</code> is still un-dumped —
+outside both the NFTL device and the two exposed MTD partitions.</p>
 
 <p><strong>The System 22 core's debug hooks</strong> are exported and untouched, and the ROM
 data sits inside a Unity asset bundle rather than as loose files.</p>
+
+<h3>The console's mouse cursor — solved</h3>
+
+<p>Left over from the console side: plug in a USB mouse and it works — correct enumeration,
+motion tracks, clicks land — but no arrow is ever drawn. The first theory was that the
+vendor blanked the pointer artwork. Wrong: the bitmaps in <code>framework-res.apk</code>
+are intact and fully opaque. Decompiling their calibration app gave the real answer.
+<strong>They don't draw a cursor, they destroy the system one</strong>, with
+<code>PointerIcon.getSystemIcon(ctx, 0)</code> — type <code>0</code> is
+<code>TYPE_NULL</code> — applied three separate ways:</p>
+
+<pre><code>// GridRelativeLayout — unconditional, and this is the load-bearing one
+public PointerIcon onResolvePointerIcon(MotionEvent e, int i) {
+    return PointerIcon.getSystemIcon(getContext(), 0);
+}
+getWindow().getDecorView().setPointerIcon(PointerIcon.getSystemIcon(this, 0));</code></pre>
+
+<p>The in-game crosshair comes from Unity. That also explains the missing
+<code>Sprite</code> layer in SurfaceFlinger: <code>TYPE_NULL</code> fades the pointer to
+alpha 0, and a sprite never made visible never has its surface created — absent rather than
+hidden.</p>
+
+<p>It explains an earlier failed fix too. Icon resolution walks <em>down</em> to the view
+under the pointer, so setting <code>TYPE_ARROW</code> on a parent loses to whatever child
+you are hovering — which is exactly why the vendor overrode the resolve hook instead of
+just calling <code>setPointerIcon</code>. Mirroring their structure and painting our own
+arrow in <code>dispatchDraw</code> works.</p>
 
 <hr>
 

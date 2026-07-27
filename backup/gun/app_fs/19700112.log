@@ -1,0 +1,9 @@
+[1970-01-12 00:00:00] Lsm6ds3TR init error
+
+[1970-01-12 00:00:00] Comp imu init failed
+
+[1970-01-12 00:00:01] vu_timeout = 3000,   nu_timeout = 6000
+[1970-01-12 00:00:02] video_stream_start_camera failed!
+[1970-01-12 00:00:02] video_steam_init failed!
+[1970-01-12 00:00:02] Comp video start failed
+

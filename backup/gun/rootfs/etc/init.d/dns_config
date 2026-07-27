@@ -1,0 +1,19 @@
+
+[ $# -lt 1 ] && echo "Error: not enough parameters" && exit 1
+
+RESOLV_CONF="/etc/resolv.conf"
+[ -e $RESOLV_CONF ] || touch $RESOLV_CONF
+
+# drop info from this interface
+# resolv.conf may be a symlink to /tmp/, so take care
+TMPFILE=$(mktemp)
+grep -vE "# $1\$" $RESOLV_CONF > $TMPFILE
+cat $TMPFILE > $RESOLV_CONF
+rm -f $TMPFILE
+
+i=0
+for j in $@
+do
+	[ $i -ge 1 ] && echo "nameserver $j # $1" >> $RESOLV_CONF
+	let i+=1
+done

@@ -1,0 +1,361 @@
+{
+    "media": {
+        "viss" : {
+            "sensor" : {
+                "dev" : [
+                    {
+                        "sns_dev"               : 0,
+                        "enable"                : true,
+                        "rotation"              : 0,
+                        "size"                  : "1920x1080",
+                        "channel" : [
+                            {
+                                "enable"        : true,
+                                "sns_chn"       : 0,
+                                "node"          : "/dev/video3"
+                            },
+                            {
+                                "enable"        : true,
+                                "sns_chn"       : 1,
+                                "node"          : "/dev/video4"
+                            }
+                        ]
+                    },
+                    {
+                        "sns_dev"               : 1,
+                        "enable"                : false,
+                        "rotation"              : 0,
+                        "size"                  : "1920x1080",
+                        "channel" : [
+                            {
+                                "enable"        : false,
+                                "chn_cnt"       : 1,
+                                "node"          : "/dev/video5"
+                            },
+                            {
+                                "enable"        : false,
+                                "chn_cnt"       : 1,
+                                "node"          : "/dev/video6"
+                            }
+                        ]
+                    }
+                ]
+            },
+
+            "isp" : {
+                "server" : {
+                    "enable"                    : true
+                }
+            }
+        },
+
+        "venc" : {
+            "mjpeg" : {
+                "rc" : {
+                    "mode"          : 0,
+                    "quality"       : 60,
+                    "bitrate" : [
+                        {
+                            "size"  : "640x360",
+                            "kbps"  : 8000
+                        },
+                        {
+                            "size"  : "640x480",
+                            "kbps"  : 10000
+                        },
+                        {
+                            "size"  : "960x540",
+                            "kbps"  : 20000
+                        },
+                        {
+                            "size"  : "1024x576",
+                            "kbps"  : 25000
+                        },
+                        {
+                            "size"  : "1280x720",
+                            "kbps"  : 30000
+                        },
+                        {
+                            "size"  : "1920x1080",
+                            "kbps"  : 60000
+                        }
+                    ]
+                }
+            }
+        }
+    },
+
+    "component" : {
+        "uvc" : {
+            "keep_aspect"               : true,
+            "dev" : [
+                {
+                    "name"              : "uvc.0",
+                    "stream" : [
+                        {
+                            "name"      : "s0",
+                            "enable"    : true,
+                            "sns_dev"   : 0,
+                            "sns_chn"   : 0,
+                            "buf_cnt"   : 4,
+                            "rotation"  : 0
+                        },
+                        {
+                            "name"      : "s1",
+                            "sns_dev"   : 0,
+                            "sns_chn"   : 1,
+                            "buf_cnt"   : 4,
+                            "rotation"  : 0
+                        }
+                    ]
+                },
+                {
+                    "name"              : "uvc.1",
+                    "stream" : [
+                        {
+                            "name"      : "s0",
+                            "sns_dev"   : 1,
+                            "sns_chn"   : 0,
+                            "buf_cnt"   : 4,
+                            "rotation"  : 0
+                        },
+                        {
+                            "name"      : "s1",
+                            "sns_dev"   : 1,
+                            "sns_chn"   : 1,
+                            "buf_cnt"   : 4,
+                            "rotation"  : 0
+                        }
+                    ]
+                }
+            ]
+        },
+
+        "audio" : {
+            "enable"                  : true,
+            "gain" : {
+                "max"                 : 12,
+                "min"                 : -28
+            },
+            "audio_effect" : {
+                "aec" : {
+                    "enable"          : false
+                },
+                "anr" : {
+                    "enable"          : true
+                },
+                "agc" : {
+                    "enable"          : true,
+                    "target_level"    : 3,
+                    "max_gain"        : 12
+                }
+            },
+            "hw_params" : [
+                {
+                    "name"            : "Input PGA Volume",
+                    "values" : [
+                        3,
+                        3
+                    ]
+                },
+                {
+                    "name"            : "Record Master Volume",
+                    "values" : [
+                        20,
+                        29
+                    ]
+                },
+                {
+                    "name"            : "Input PGA Mute",
+                    "values" : [
+                        false,
+                        false
+                    ]
+                }
+            ],
+            "record" : {
+                "mode"                : 0,
+                "path"                : "/data/audio_record",
+                "duration"            : 10,
+                "format"              : "pcm"
+            }
+        },
+
+        "uac" : {
+            "audio_chn"               : 0,
+            "volume"                  : 95,
+            "mute"                    : false,
+            "snd_name"                : "hw:1,0",
+            "debug"                   : {
+                "enable"              : false
+            }
+        },
+
+        "campan" : {
+            "enable"                  : false,
+            "sns_dev"                 : 0,
+            "sns_chn"                 : 1,
+            "size"                    : "1280x704",
+            "framerate"               : 30,
+            "buf_cnt"                 : 4,
+            "rotation"                : 0,
+            "run_state"               : "default",
+            "feature_base" : {
+                "enable"              : false,
+                "max_num"             : 5,
+                "path"                : "/data/feature"
+            }
+        },
+
+        "dzoom" : {
+            "enable"                  : false,
+            "attr" : [
+                {
+                    "enable"          : true,
+                    "sns_dev"         : 0,
+                    "sns_chn"         : 0,
+                    "mode"            : ["gesture_zoom"]
+                },
+                {
+                    "enable"          : false,
+                    "sns_dev"         : 1,
+                    "sns_chn"         : 0,
+                    "mode"            : ["auto_zoom"]
+                }
+            ]
+        },
+
+        "watermark" : {
+            "enable"                  : false,
+            "auto_rot"                : false,
+            "font_file"               : "/app/customer/SourceHanSansCN-Normal.ttf",
+            "campan" : {
+                "enable"              : true,
+                "draw" : [
+                    {
+                        "sns_dev"     : 0,
+                        "sns_chn"     : 0
+                    }
+                ],
+                "human" : {
+                    "max_num"         : 5,
+                    "rect" : {
+                        "enable"      : true,
+                        "color" : {
+                            "normal"  : "0xff00ff00",
+                            "track"   : "0xff0000ff"
+                        }
+                    },
+                    "line" : {
+                        "enable"      : false,
+                        "dynamic" : {
+                            "enable"  : false,
+                            "default" : false
+                        }
+                    }
+                },
+                "head" : {
+                    "max_num"         : 15,
+                    "rect" : {
+                        "enable"      : true,
+                        "color" : {
+                            "normal"  : "0xffffff00",
+                            "track"   : "0xffff0000"
+                        }
+                    },
+                    "text" : {
+                        "enable"      : false,
+                        "canvas_size" : "128x40",
+                        "font_size"   : 20,
+                        "dynamic" : {
+                            "enable"  : false,
+                            "default" : false
+                        }
+                    }
+                },
+                "face" : {
+                    "max_num" : 15,
+                    "rect" : {
+                        "enable"      : false,
+                        "color"       : "0xffff9900"
+                    }
+                },
+                "gesture" : {
+                    "max_num"         : 5,
+                    "mode"            : "track",
+                    "rect" : {
+                        "enable"      : true,
+                        "color"       : "0xff000000"
+                    },
+                    "text" : {
+                        "enable"      : true,
+                        "canvas_size" : "128x40",
+                        "font_size"   : 25
+                    }
+                }
+            },
+            "logo" : {
+                "enable"              : false,
+                "draw" : [
+                    {
+                        "sns_dev"     : 0,
+                        "sns_chn"     : 0
+                    }
+                ],
+                "pic" : {
+                    "enable"          : true,
+                    "after_crop"      : true,
+                    "file"            : "/app/customer/camera.bmp",
+                    "canvas_size"     : "128x128",
+                    "position" : {
+                        "x"           : 50,
+                        "y"           : 50
+                    }
+                },
+                "text" : {
+                    "enable"          : false,
+                    "after_crop"      : true,
+                    "canvas_size"     : "256x128",
+                    "font_size"       : 25,
+                    "position" : {
+                        "x"           : 85,
+                        "y"           : 200
+                    }
+                }
+            }
+        },
+
+        "panel" : {
+            "enable"                : false,
+            "win_size"              : "320x480",
+            "mode"                  : "vertical",
+            "fbpage_rot"            : 0,
+            "disp_attr" : [
+                {
+                    "enable"        : true,
+                    "sns_dev"       : 0,
+                    "sns_chn"       : 1,
+                    "size"          : "1280x720",
+                    "framerate"     : 30,
+                    "buf_cnt"       : 4,
+                    "rotation"      : 90
+                },
+                {
+                    "enable"        : false,
+                    "sns_dev"       : 1,
+                    "sns_chn"       : 0,
+                    "size"          : "1280x720",
+                    "framerate"     : 30,
+                    "buf_cnt"       : 4,
+                    "rotation"      : 0
+                }
+            ]
+        },
+
+        "pm" : {
+            "enable"       : false,
+            "mode"         : "freeze",
+            "idle_timeout" : 60
+        }
+    }
+}

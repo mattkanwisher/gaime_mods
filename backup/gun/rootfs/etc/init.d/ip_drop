@@ -1,0 +1,18 @@
+
+[ $# -lt 1 ] && echo "Error: not enough parameters" && exit 1
+
+RESOLV_CONF="/etc/resolv.conf"
+[ -e $RESOLV_CONF ] || touch $RESOLV_CONF
+
+#/sbin/ifconfig $1 0.0.0.0
+
+# drop info from this interface
+# resolv.conf may be a symlink to /tmp/, so take care
+TMPFILE=$(mktemp)
+grep -vE "# $1\$" $RESOLV_CONF > $TMPFILE
+cat $TMPFILE > $RESOLV_CONF
+rm -f $TMPFILE
+
+if [ -x /usr/sbin/avahi-autoipd ]; then
+	/usr/sbin/avahi-autoipd -k $1
+fi

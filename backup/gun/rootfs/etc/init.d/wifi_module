@@ -1,0 +1,23 @@
+#!/bin/sh
+
+[ -f /lib/modules/$(uname -r)/8189fs.ko ] || exit 0
+
+case "$1" in
+	start)
+		insmod /lib/modules/$(uname -r)/8189fs.ko &
+		[ $? = 0 ] && echo "OK" || echo "FAIL"
+		;;
+	stop)
+		rmmod 8189fs
+		[ $? = 0 ] && echo "OK" || echo "FAIL"
+		;;
+	restart|reload)
+		$0 stop
+		$0 start
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart}"
+		exit 1
+esac
+
+exit 0

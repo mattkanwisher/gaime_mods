@@ -1,0 +1,39 @@
+#!/bin/sh
+
+MOUNT_POINT=/mnt/card
+
+TEST_DEV=
+BOOTDEV=
+
+tmp_str=$(cat /proc/cmdline)
+tmp_str=${tmp_str#*root=}
+tmp_str=${tmp_str%% *}
+
+if [ "x${tmp_str%%k*}" == "x/dev/mmcbl" ]; then
+	BOOTDEV=${tmp_str%%p*}
+	TEST_DEV=/dev/${MDEV%%p*}
+	if [ "x$BOOTDEV" == "x$TEST_DEV" ]; then
+		echo "skip boot device /dev/$MDEV" > /dev/console
+		exit
+	fi
+fi
+
+if [ ! -f $MDEV ]; then
+	if [ ! -d $MOUNT_POINT ]; then
+		mkdir -p $MOUNT_POINT
+	fi
+
+	if [ ! -d $MOUNT_POINT ]; then
+		echo "${MOUNT_POINT} can not create" > /dev/console
+		exit
+	fi
+
+	echo "start to mount ${MDEV} ${MOUNT_POINT}" > /dev/console
+
+	mount -t vfat -o iocharset=utf8,codepage=936 /dev/$MDEV $MOUNT_POINT
+	if [ $? -eq 0 ]; then
+		echo "mount ${MDEV} ${MOUNT_POINT} ok" > /dev/console
+	else
+		echo "mount ${MDEV} ${MOUNT_POINT} failed" > /dev/console
+	fi
+fi

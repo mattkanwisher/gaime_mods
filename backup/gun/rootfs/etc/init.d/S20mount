@@ -1,0 +1,558 @@
+#!/bin/sh
+
+#lombo mount
+export LOMBO_MOUNT
+
+export LOMBO_MOUNT_POINT
+export LOMBO_FS_OPT
+export LOMBO_FS
+export LOMBO_DEV
+
+DATA_DEV=/dev/block/userdata
+OPTS="defaults,noatime,errors=remount-ro"
+SDCARD_MOUNT_POINT=/mnt/card
+FLAG="LOMBO_MOUNT_EXIT"
+NOT_ENDING="NOT_END"
+
+decode_mount_arg()
+{
+	MOUNT_ARG=$1
+	echo "Get MOUNT_ARG: $MOUNT_ARG"
+#the first checking mount argment rely on '@'
+	FIRST_CHECK=$(echo $MOUNT_ARG | grep "@")
+	if [ -n "$FIRST_CHECK" ]; then
+		LOMBO_DEV=${MOUNT_ARG%%@*}
+		LOMBO_MOUNT_POINT=${MOUNT_ARG#*@}
+
+#the second checking '@'
+		SECOND_CHECK=$(echo $LOMBO_MOUNT_POINT | grep "@")
+		if [ -n "$SECOND_CHECK" ]; then
+			LOMBO_FS_OPT=${LOMBO_MOUNT_POINT#*@}
+			LOMBO_MOUNT_POINT=${LOMBO_MOUNT_POINT%@*}
+
+			IF_OPTS=$(echo $LOMBO_FS_OPT | grep "-")
+			if [ -n "$IF_OPTS" ]; then
+				OPTS=${LOMBO_FS_OPT#*-}
+				LOMBO_FS=${LOMBO_FS_OPT%%-*}
+			else
+				LOMBO_FS=$LOMBO_FS_OPT
+			fi
+		else
+			echo "'@'should be used to distinguish between mount point and filesystem!"
+			echo "get device : $LOMBO_DEV."
+			return 1
+		fi
+	else
+		echo "'@'should be used to distinguish amoung device,mount point and filesystem!"
+		return 1
+	fi
+}
+
+set_dirty_ratio()
+{
+	echo 5 > /proc/sys/vm/dirty_ratio
+	echo 2 > /proc/sys/vm/dirty_background_ratio
+	echo 100 > /proc/sys/vm/dirty_expire_centisecs
+	echo 100 > /proc/sys/vm/dirty_writeback_centisecs
+}
+
+check_clean_dev()
+{
+	chkdev=$1
+
+	chk_pattern="0000400 0000 0000 0000 0000 0000 0000 0000 0000"
+
+	readstr=$(hexdump -s 1024 -n 512 $chkdev | head -1)
+	readstr=$(echo $readstr)
+
+	if [ "x$chk_pattern" == "x$readstr" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+check_clean_vfat_dev()
+{
+	chkdev=$1
+
+	chk_pattern="0000002 6d90 666b 2e73"
+
+	readstr=$(hexdump -s 2 -n 6 $chkdev | head -1)
+	readstr=$(echo $readstr)
+
+	if [ "x$chk_pattern" == "x$readstr" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+remount_ro()
+{
+	LOMBO_MOUNT=$(cat /proc/cmdline)
+	LOMBO_ESIXT=$(echo $LOMBO_MOUNT | grep "lombo_mount=")
+	if [ -n "$LOMBO_ESIXT" ]; then
+		LOMBO_MOUNT=${LOMBO_MOUNT#*lombo_mount=}
+		LOMBO_MOUNT=${LOMBO_MOUNT%% *}
+
+		if [ -n "$LOMBO_MOUNT" ]; then
+			FLAG="LOMBO_MOUNT_IN"
+		else
+			FLAG="LOMBO_MOUNT_EXIT"
+		fi
+	else
+		FLAG="LOMBO_MOUNT_EXIT"
+	fi
+
+	if [ "x$FLAG" == "xLOMBO_MOUNT_IN" ]; then
+		NOT_ENDING="NOT_END"
+		while [ "x$NOT_ENDING" == "xNOT_END" ]
+		do
+			NOT_ENDING=$(echo $LOMBO_MOUNT | grep "&&")
+			if [ -n "$NOT_ENDING" ]; then
+				MOUNT_ARG=${LOMBO_MOUNT%%&&*}
+				LOMBO_MOUNT=${LOMBO_MOUNT#*&&}
+				NOT_ENDING="NOT_END"
+			else
+				MOUNT_ARG=$LOMBO_MOUNT
+				NOT_ENDING="IS_END"
+			fi
+
+			decode_mount_arg $MOUNT_ARG
+			if [ $? -eq 0 ]; then
+				echo "Remount $LOMBO_MOUNT_POINT as read only"
+				mount -o "remount,ro" $LOMBO_MOUNT_POINT
+			else
+				exit
+			fi
+		done
+	else
+		echo "Remount /data as read only"
+		mount -o "remount,ro" /data
+	fi
+}
+
+mount_ext4()
+{
+	if [ "x$FLAG" == "xLOMBO_MOUNT_IN" ]; then
+		IF_OPT=$(echo $LOMBO_FS_OPT | grep "-")
+		if [ -n "$IF_OPT" ]; then
+			if [ -n "$OPTS" ]; then
+				IF_RO=$(echo $OPTS | grep "ro")
+				if [ -n "$IF_RO" ]; then
+					#‘remount-ro’ can not be phased to readonly
+					IF_RO=$(echo $OPTS | grep "remount-ro")
+					if [ -z "$IF_RO" ]; then
+						echo "Starting to mount $LOMBO_DEV as readonly..."
+						mount -t ext4 -o $OPTS $LOMBO_DEV $LOMBO_MOUNT_POINT
+
+						echo "setblkro $LOMBO_DEV"
+						/sbin/setblkro $LOMBO_DEV
+						return 0
+					fi
+				fi
+			else
+				OPTS=""
+			fi
+		else
+			OPTS=""
+		fi
+
+		check_clean_dev $LOMBO_DEV
+		if [ $? -eq 0 ]; then
+			echo "clean device $LOMBO_DEV ..."
+			mke2fs -t ext4 -b 4096 -F $LOMBO_DEV
+			if [ $? -ne 0 ]; then
+				echo "Format $LOMBO_DEV to ext4 failed!"
+				return 1
+			fi
+
+			if [ -n "$OPTS" ]; then
+				mount -t ext4 -o $OPTS $LOMBO_DEV $LOMBO_MOUNT_POINT
+			else
+				mount -t ext4 $LOMBO_DEV $LOMBO_MOUNT_POINT
+			fi
+		else
+			echo "Mounting $LOMBO_DEV ..."
+			mount -t ext4 $LOMBO_DEV $LOMBO_MOUNT_POINT && umount $LOMBO_MOUNT_POINT
+			e2fsck -y $LOMBO_DEV > /dev/null
+
+			if [ -n "$OPTS" ]; then
+				mount -t ext4 -o $OPTS $LOMBO_DEV $LOMBO_MOUNT_POINT
+			else
+				mount -t ext4 $LOMBO_DEV $LOMBO_MOUNT_POINT
+			fi
+
+			if [ $? -ne 0 ]; then
+				mke2fs -t ext4 -b 4096 -F $LOMBO_DEV
+				if [ $? -ne 0 ]; then
+					echo "Format $LOMBO_DEV to ext4 failed!"
+					return 1
+				fi
+
+				if [ -n "$OPTS" ]; then
+					mount -t ext4 -o $OPTS $LOMBO_DEV $LOMBO_MOUNT_POINT
+				else
+					mount -t ext4 $LOMBO_DEV $LOMBO_MOUNT_POINT
+				fi
+			fi
+		fi
+	else
+		check_clean_dev $DATA_DEV
+		if [ $? -eq 0 ]; then
+			echo "clean device $DATA_DEV ..."
+			mke2fs -t ext4 -b 4096 -F $DATA_DEV
+			if [ $? -ne 0 ]; then
+				echo "Format $DATA_DEV to ext4 failed!"
+				return 1
+			fi
+			mount -t ext4 -o $OPTS $DATA_DEV /data
+		else
+			echo "Mounting /data ..."
+			mount -t ext4 -o $OPTS $DATA_DEV /data && umount /data
+			e2fsck -y $DATA_DEV > /dev/null
+
+			mount -t ext4 -o $OPTS $DATA_DEV /data
+
+			if [ $? -ne 0 ]; then
+				mke2fs -t ext4 -b 4096 -F $DATA_DEV
+				if [ $? -ne 0 ]; then
+					echo "Format $DATA_DEV to ext4 failed!"
+					return 1
+				fi
+
+				mount -t ext4 -o $OPTS $DATA_DEV /data
+			fi
+		fi
+	fi
+}
+
+mount_vfat()
+{
+	if [ "x$FLAG" == "xLOMBO_MOUNT_IN" ]; then
+
+		IF_OPT=$(echo $LOMBO_FS_OPT | grep "-")
+		if [ -n "$IF_OPT" ]; then
+			if [ -n "$OPTS" ]; then
+				IF_RO=$(echo $OPTS | grep "ro")
+				if [ -n "$IF_RO" ]; then
+					IF_RO=$(echo $OPTS | grep "remount-ro")
+					if [ -z "$IF_RO" ]; then
+						echo "mounting $LOMBO_DEV as readonly..."
+						mount -t vfat -o $OPTS $LOMBO_DEV $LOMBO_MOUNT_POINT
+
+						echo "setblkro $LOMBO_DEV"
+						/sbin/setblkro $LOMBO_DEV
+						return 0
+					fi
+				fi
+			else
+				OPTS=""
+			fi
+		else
+			OPTS=""
+		fi
+
+		check_clean_vfat_dev $LOMBO_DEV
+		if [ $? -ne 0 ]; then
+			echo "clean device $LOMBO_DEV ..."
+			mkfs.vfat $LOMBO_DEV
+			if [ $? -ne 0 ]; then
+				echo "Format $LOMBO_DEV to vfat failed!"
+				return 1
+			fi
+
+			if [ -n "$OPTS" ]; then
+				mount -t vfat -o $OPTS $LOMBO_DEV $LOMBO_MOUNT_POINT
+			else
+				mount -t vfat $LOMBO_DEV $LOMBO_MOUNT_POINT
+			fi
+		else
+			fsck.vfat -y $LOMBO_DEV > /dev/null
+			echo "Mounting $LOMBO_DEV ..."
+
+			if [ -n "$OPTS" ]; then
+				mount -t vfat -o $OPTS $LOMBO_DEV $LOMBO_MOUNT_POINT
+			else
+				mount -t vfat $LOMBO_DEV $LOMBO_MOUNT_POINT
+			fi
+
+			if [ $? -ne 0 ] ; then
+				mkfs.vfat $LOMBO_DEV
+				if [ $? -ne 0 ]; then
+					echo "Format $LOMBO_DEV to vfat failed!"
+					return 1
+				fi
+
+				if [ -n "$OPTS" ]; then
+					mount -t vfat -o $OPTS $LOMBO_DEV $LOMBO_MOUNT_POINT
+				else
+					mount -t vfat $LOMBO_DEV $LOMBO_MOUNT_POINT
+				fi
+			fi
+		fi
+	else
+		check_clean_vfat_dev $DATA_DEV
+		if [ $? -ne 0 ]; then
+			echo "clean device $DATA_DEV ..."
+			mkfs.vfat $DATA_DEV
+			if [ $? -ne 0 ]; then
+				echo "Format $DATA_DEV to vfat failed!"
+				return 1
+			fi
+
+			mount -t vfat -o $OPTS $DATA_DEV /data
+		else
+			fsck.vfat -y $DATA_DEV > /dev/null
+			echo "Mounting $DATA_DEV ..."
+			mount -t vfat $DATA_DEV /data
+
+			if [ $? -ne 0 ] ; then
+				mkfs.vfat $DATA_DEV
+				if [ $? -ne 0 ]; then
+					echo "Format $DATA_DEV to vfat failed"
+					return 1
+				fi
+
+				mount -t vfat $DATA_DEV /data
+			fi
+		fi
+	fi
+}
+
+mount_squashfs()
+{
+	echo "Mounting $LOMBO_DEV ..."
+
+	IF_OPT=$(echo $LOMBO_FS_OPT | grep "-")
+	if [ -n "$IF_OPT" ]; then
+		if [ -n "$OPTS" ]; then
+			mount -t squashfs -o $OPTS $LOMBO_DEV $LOMBO_MOUNT_POINT
+		else
+			OPTS=""
+		fi
+	else
+		OPTS=""
+		mount -t squashfs $LOMBO_DEV $LOMBO_MOUNT_POINT
+	fi
+
+	if [ $? -eq 0 ]; then
+		echo "setblkro $LOMBO_DEV"
+		/sbin/setblkro $LOMBO_DEV
+	fi
+}
+
+mount_jffs2()
+{
+	echo "Mounting $LOMBO_DEV ..."
+
+#check the device whether is in /dev/block/
+	IF_DEV=$(echo "$LOMBO_DEV" | grep "/dev/block/")
+	if [ ! -n "$IF_DEV" ]; then
+		echo "Got device : $LOMBO_DEV"
+		echo "ERROR(jffs2): Not the device in '/dev/block'"
+		return 1
+	fi
+
+	LOMBO_DEV=${LOMBO_DEV#*/dev/block/}
+	if [ ! -L /dev/char/$LOMBO_DEV ]; then
+		echo "ERROR: /dev/char/$LOMBO_DEV do not exit!"
+		return 1
+	fi
+
+	IF_OPT=$(echo $LOMBO_FS_OPT | grep "-")
+	if [ -n "$IF_OPT" ]; then
+		if [ -n "$OPTS" ]; then
+			IF_RO=$(echo $OPTS | grep "ro")
+			if [ -n "$IF_RO" ]; then
+				IF_RO=$(echo $OPTS | grep "remount-ro")
+				if [ -z "$IF_RO" ]; then
+					echo "Mounting "/dev/block/$LOMBO_DEV" as readonly..."
+					mount -t jffs2 -o $OPTS /dev/block/$LOMBO_DEV $LOMBO_MOUNT_POINT
+
+					echo "setblkro /dev/block/$LOMBO_DEV"
+					/sbin/setblkro /dev/block/$LOMBO_DEV
+					return 0
+				fi
+			fi
+		else
+			OPTS=""
+		fi
+	else
+		OPTS=""
+	fi
+
+	if [ -n "$OPTS" ]; then
+		mount -t jffs2 -o $OPTS /dev/block/$LOMBO_DEV $LOMBO_MOUNT_POINT
+	else
+		mount -t jffs2 /dev/block/$LOMBO_DEV $LOMBO_MOUNT_POINT
+	fi
+
+	if [ $? -ne 0 ]; then
+		echo "Formating $LOMBO_DEV to jffs2 ..."
+		flash_erase -j /dev/char/$LOMBO_DEV 0 0 > /dev/null
+		if [ $? -ne 0 ]; then
+			echo "Format $LOMBO_DEV to jffs2 failed!"
+			return 1
+		fi
+
+		if [ -n "$OPTS" ]; then
+			mount -t jffs2 -o $OPTS /dev/block/$LOMBO_DEV $LOMBO_MOUNT_POINT
+		else
+			mount -t jffs2 /dev/block/$LOMBO_DEV $LOMBO_MOUNT_POINT
+		fi
+	fi
+}
+
+mount_yaffs2()
+{
+	echo "Mounting $LOMBO_DEV ..."
+
+#check the device whether is in /dev/block/
+	IF_DEV=$(echo "$LOMBO_DEV" | grep "/dev/block/")
+	if [ ! -n "$IF_DEV" ]; then
+		echo "Got device : $LOMBO_DEV"
+		echo "ERROR(yaffs2): Not the device in '/dev/block'"
+		return 1
+	fi
+
+	LOMBO_DEV=${LOMBO_DEV#*/dev/block/}
+	if [ ! -L /dev/char/$LOMBO_DEV ]; then
+		echo "ERROR: /dev/char/$LOMBO_DEV do not exit!"
+		return 1
+	fi
+
+	IF_OPT=$(echo $LOMBO_FS_OPT | grep "-")
+	if [ -n "$IF_OPT" ]; then
+		if [ -n "$OPTS" ]; then
+			IF_RO=$(echo $OPTS | grep "ro")
+			if [ -n "$IF_RO" ]; then
+				IF_RO=$(echo $OPTS | grep "remount-ro")
+				if [ -z "$IF_RO" ]; then
+					echo "Mounting "/dev/block/$LOMBO_DEV" as readonly..."
+					mount -t yaffs2 -o $OPTS /dev/block/$LOMBO_DEV $LOMBO_MOUNT_POINT
+
+					echo "setblkro /dev/block/$LOMBO_DEV"
+					/sbin/setblkro /dev/block/$LOMBO_DEV
+					return 0
+				fi
+			fi
+		else
+			OPTS=""
+		fi
+	else
+		OPTS=""
+	fi
+
+	if [ -n "$OPTS" ]; then
+		mount -t yaffs2 -o $OPTS /dev/block/$LOMBO_DEV $LOMBO_MOUNT_POINT
+	else
+		mount -t yaffs2 /dev/block/$LOMBO_DEV $LOMBO_MOUNT_POINT
+	fi
+
+	if [ $? -ne 0 ]; then
+		echo "Formating $LOMBO_DEV to yaffs2 ..."
+		flash_erase /dev/char/$LOMBO_DEV 0 0 > /dev/null
+		if [ $? -ne 0 ]; then
+			echo "Format $LOMBO_DEV to yaffs2 failed!"
+			return 1
+		fi
+
+		if [ -n "$OPTS" ]; then
+			mount -t yaffs2 -o $OPTS /dev/block/$LOMBO_DEV $LOMBO_MOUNT_POINT
+		else
+			mount -t yaffs2 /dev/block/$LOMBO_DEV $LOMBO_MOUNT_POINT
+		fi
+	fi
+}
+
+lombo_mount_start()
+{
+	if [ "x$LOMBO_FS" == "xext4" ]; then
+		mount_ext4
+	else
+		if [ "x$LOMBO_FS" == "xvfat" ]; then
+			mount_vfat
+		else
+			if [ "x$LOMBO_FS" == "xsquashfs" ]; then
+				mount_squashfs
+			else
+				if [ "x$LOMBO_FS" == "xjffs2" ]; then
+					mount_jffs2
+				else
+					if [ "x$LOMBO_FS" == "xyaffs2" ]; then
+						mount_yaffs2
+					else
+						echo "Error: Don not support mount $LOMBO_FS Filesystem!"
+						return 1
+					fi
+				fi
+			fi
+		fi
+	fi
+
+	if [ $? -eq 0 ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+data_ext_opt()
+{
+	if [ ! -d "/data/log" ]; then
+		mkdir /data/log
+	fi
+}
+
+case "$1" in
+	start)
+		LOMBO_MOUNT=$(cat /proc/cmdline)
+		LOMBO_ESIXT=$(echo $LOMBO_MOUNT | grep "lombo_mount=")
+		if [ -n "$LOMBO_ESIXT" ]; then
+			LOMBO_MOUNT=${LOMBO_MOUNT#*lombo_mount=}
+			LOMBO_MOUNT=${LOMBO_MOUNT%% *}
+
+			if [ -n "$LOMBO_MOUNT" ]; then
+				FLAG="LOMBO_MOUNT_IN"
+
+				while [ "x$NOT_ENDING" == "xNOT_END" ]
+				do
+					NOT_ENDING=$(echo $LOMBO_MOUNT | grep "&&")
+					if [ -n "$NOT_ENDING" ]; then
+						MOUNT_ARG=${LOMBO_MOUNT%%&&*}
+						LOMBO_MOUNT=${LOMBO_MOUNT#*&&}
+						NOT_ENDING="NOT_END"
+					else
+						MOUNT_ARG=$LOMBO_MOUNT
+						NOT_ENDING="IS_END"
+					fi
+
+					decode_mount_arg $MOUNT_ARG
+					if [ $? -eq 0 ]; then
+						lombo_mount_start
+					else
+						exit
+					fi
+				done
+			else
+				FLAG="LOMBO_MOUNT_EXIT"
+				mount_ext4
+			fi
+		else
+			FLAG="LOMBO_MOUNT_EXIT"
+			mount_ext4
+		fi
+
+		data_ext_opt
+		set_dirty_ratio
+	;;
+
+	stop)
+		remount_ro
+	;;
+
+	*)
+	;;
+esac

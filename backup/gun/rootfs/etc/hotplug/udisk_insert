@@ -1,0 +1,34 @@
+#!/bin/sh
+
+MOUNT_POINT=/mnt/usb
+PRE_FIX="/dev/"
+NUM="1"
+TEST_DEV=$PRE_FIX$MDEV$NUM
+
+if [ ! -f $MDEV ]; then
+	if [ ! -d $MOUNT_POINT ]; then
+		mkdir -p $MOUNT_POINT
+	fi
+
+	if [ ! -d $MOUNT_POINT ]; then
+		echo "${MOUNT_POINT} can not create" > /dev/console
+		exit
+	fi
+
+	echo "${MDEV} usb insert" > /dev/console
+	sleep 1
+	echo $TEST_DEV > /dev/console
+
+	if [ -e $TEST_DEV ]; then
+		echo "${MDEV} do not create" > /dev/console
+		exit
+	fi
+
+	echo "start to mount ${MDEV} usb device" > /dev/console
+	mount -o iocharset=utf8,codepage=936 /dev/$MDEV $MOUNT_POINT
+	if [ $? -eq 0 ]; then
+		echo "mount ${MDEV} usb device ok" > /dev/console
+	else
+		echo "mount ${MDEV} usb device failed" > /dev/console
+	fi
+fi

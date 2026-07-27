@@ -1,0 +1,10 @@
+#!/bin/sh
+
+case "$1" in
+  start)
+    debuggerd &
+    echo 3 > /proc/sys/kernel/panic &
+    ;;
+  *)
+    ;;
+esac
