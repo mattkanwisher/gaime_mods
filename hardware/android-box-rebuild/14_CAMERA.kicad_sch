@@ -1,0 +1,3829 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "0497643c-8319-4517-8e06-199aab4fbefd")
+	(paper "User" 291.846 205.0288)
+	(lib_symbols
+		(symbol "avaota-a1--easyedapro:5-Voltage"
+			(power global)
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "#PWR"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" ""
+				(at 0 3.81 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" "avaota-a1--easyedapro:"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Power-5V"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "5-Voltage_1_0"
+				(polyline
+					(pts
+						(xy -1.27 2.54) (xy 1.27 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 2.54) (xy 0 1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin power_in line
+					(at 0 0 90)
+					(length 1.27)
+					(name "VCC-PK"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 0.0254 0.0254)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "avaota-a1--easyedapro:FPC-05FB-30PH20"
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "FPC"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" "avaota-a1--easyedapro:FPC-SMD_30P-P0.50_FPC-05FB-30PH20"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" "https://atta.szlcsc.com/upload/public/pdf/source/20210922/C2856833_974F2E309F01E02BEE862D1FB45F93FA.pdf"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "锁定特性:翻盖式;触点类型:双侧触点/上下接;触点数量:30P;间距:0.5mm;安装类型:卧贴;工作温度范围:-25°C~+85°C;"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Manufacturer Part" "FPC-05FB-30PH20"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Manufacturer" "XUNPU(讯普)"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Supplier Part" "C2856833"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Supplier" "LCSC"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "LCSC Part Name" "间距:0.5mm P数:30P 翻盖式 双侧触点/上下接"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "FPC-05FB-30PH20_1_0"
+				(rectangle
+					(start -2.54 -39.37)
+					(end 5.08 39.37)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center -1.27 38.1)
+					(radius 0.381)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 36.83 0)
+					(length 2.54)
+					(name "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 34.29 0)
+					(length 2.54)
+					(name "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 31.75 0)
+					(length 2.54)
+					(name "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 29.21 0)
+					(length 2.54)
+					(name "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 26.67 0)
+					(length 2.54)
+					(name "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 24.13 0)
+					(length 2.54)
+					(name "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 21.59 0)
+					(length 2.54)
+					(name "7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 19.05 0)
+					(length 2.54)
+					(name "8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 16.51 0)
+					(length 2.54)
+					(name "9"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "9"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 13.97 0)
+					(length 2.54)
+					(name "10"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "10"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 11.43 0)
+					(length 2.54)
+					(name "11"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "11"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 8.89 0)
+					(length 2.54)
+					(name "12"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "12"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 6.35 0)
+					(length 2.54)
+					(name "13"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "13"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 3.81 0)
+					(length 2.54)
+					(name "14"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "14"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 1.27 0)
+					(length 2.54)
+					(name "15"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "15"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -1.27 0)
+					(length 2.54)
+					(name "16"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "16"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -3.81 0)
+					(length 2.54)
+					(name "17"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "17"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -6.35 0)
+					(length 2.54)
+					(name "18"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "18"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -8.89 0)
+					(length 2.54)
+					(name "19"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "19"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -11.43 0)
+					(length 2.54)
+					(name "20"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "20"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -13.97 0)
+					(length 2.54)
+					(name "21"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "21"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -16.51 0)
+					(length 2.54)
+					(name "22"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "22"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -19.05 0)
+					(length 2.54)
+					(name "23"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "23"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -21.59 0)
+					(length 2.54)
+					(name "24"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "24"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -24.13 0)
+					(length 2.54)
+					(name "25"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "25"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -26.67 0)
+					(length 2.54)
+					(name "26"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "26"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -29.21 0)
+					(length 2.54)
+					(name "27"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "27"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -31.75 0)
+					(length 2.54)
+					(name "28"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "28"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -34.29 0)
+					(length 2.54)
+					(name "29"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "29"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at -5.08 -36.83 0)
+					(length 2.54)
+					(name "30"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "30"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at 3.81 -41.91 90)
+					(length 2.54)
+					(name "31"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "31"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin unspecified line
+					(at 3.81 41.91 270)
+					(length 2.54)
+					(name "32"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "32"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "avaota-a1--easyedapro:Ground-GND"
+			(power global)
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "#PWR"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" ""
+				(at 0 -6.35 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.5748 1.5748)
+					)
+				)
+			)
+			(property "Footprint" "avaota-a1--easyedapro:"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "Ground-GND_1_0"
+				(polyline
+					(pts
+						(xy -2.54 -2.54) (xy 2.54 -2.54)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.778 -3.302) (xy 1.778 -3.302)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.016 -4.064) (xy 1.016 -4.064)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -0.254 -4.826) (xy 0.254 -4.826)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin power_in line
+					(at 0 0 270)
+					(length 2.54)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 0.0254 0.0254)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "avaota-a1--easyedapro:Sheet_A4"
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" "avaota-a1--easyedapro:"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "Sheet_A4_1_0"
+				(rectangle
+					(start 0 0)
+					(end 291.846 -204.724)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 2.54 -2.54)
+					(end 289.306 -202.184)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.54 -52.324) (xy 0 -52.324)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.54 -102.108) (xy 0 -102.108)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.54 -151.892) (xy 0 -151.892)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 52.324 -2.54) (xy 52.324 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 52.324 -202.184) (xy 52.324 -204.724)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 102.108 -2.54) (xy 102.108 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 102.108 -202.184) (xy 102.108 -204.724)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 151.892 -2.54) (xy 151.892 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 151.892 -202.184) (xy 151.892 -204.724)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 176.5046 -181.864)
+					(end 289.2806 -202.184)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 176.5554 -191.8208) (xy 289.2044 -191.8208)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 201.676 -2.54) (xy 201.676 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 201.676 -202.184) (xy 201.676 -204.724)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 203.0984 -191.8208) (xy 203.0984 -201.9808)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 203.0984 -196.9008) (xy 289.2044 -196.9008)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 236.1184 -191.8208) (xy 236.1184 -196.9008)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 251.46 -2.54) (xy 251.46 0)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 251.46 -202.184) (xy 251.46 -204.724)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 263.0424 -191.8208) (xy 263.0424 -196.9008)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 269.1384 -181.864) (xy 269.1384 -191.8208)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 289.306 -52.324) (xy 291.846 -52.324)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 289.306 -102.108) (xy 291.846 -102.108)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 289.306 -151.892) (xy 291.846 -151.892)
+					)
+					(stroke
+						(width 0)
+						(type default)
+						(color 0 0 0 1)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(text "A"
+					(at 0.381 -27.7622 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "B"
+					(at 0.381 -77.5462 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "C"
+					(at 0.381 -127.3302 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "D"
+					(at 0.381 -177.1142 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "1"
+					(at 27.432 -2.4892 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "1"
+					(at 27.432 -204.6732 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "2"
+					(at 77.216 -2.4892 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "2"
+					(at 77.216 -204.6732 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "3"
+					(at 127 -2.4892 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "3"
+					(at 127 -204.6732 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "4"
+					(at 176.784 -2.4892 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "4"
+					(at 176.784 -204.6732 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "TITLE:"
+					(at 177.8 -190.5 0)
+					(effects
+						(font
+							(size 1.7272 1.7272)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "Company:"
+					(at 204.4446 -195.5546 0)
+					(effects
+						(font
+							(size 1.7272 1.7272)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "Date:"
+					(at 204.47 -200.66 0)
+					(effects
+						(font
+							(size 1.7272 1.7272)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "5"
+					(at 226.568 -2.4892 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "5"
+					(at 226.568 -204.6732 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "Sheet:"
+					(at 237.744 -196.088 0)
+					(effects
+						(font
+							(size 1.7272 1.7272)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "Drawn By:"
+					(at 238.76 -200.66 0)
+					(effects
+						(font
+							(size 1.7272 1.7272)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "Total:"
+					(at 264.668 -196.088 0)
+					(effects
+						(font
+							(size 1.7272 1.7272)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "REV:"
+					(at 270.256 -191.516 0)
+					(effects
+						(font
+							(size 1.7272 1.7272)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "A"
+					(at 289.687 -27.7622 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "B"
+					(at 289.687 -77.5462 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "C"
+					(at 289.687 -127.3302 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+				(text "D"
+					(at 289.687 -177.1142 0)
+					(effects
+						(font
+							(size 1.524 1.524)
+							(color 0 0 0 1)
+						)
+						(justify left bottom)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "avaota-a1--easyedapro:电阻"
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "10K"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" "avaota-a1--easyedapro:R0603"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "电阻_1_0"
+				(rectangle
+					(start -2.54 1.016)
+					(end 2.54 -1.016)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin input line
+					(at -5.08 0 0)
+					(length 2.54)
+					(name "1"
+						(effects
+							(font
+								(size 0.0254 0.0254)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 0.0254 0.0254)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at 5.08 0 180)
+					(length 2.54)
+					(name "2"
+						(effects
+							(font
+								(size 0.0254 0.0254)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 0.0254 0.0254)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+	)
+	(junction
+		(at 226.06 59.69)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "5cd24f78-b01e-47d9-915e-69267be9acf5")
+	)
+	(junction
+		(at 226.06 128.27)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "7ce7b01e-ee56-4980-bc25-afff316937af")
+	)
+	(junction
+		(at 154.94 105.41)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "7e4c2eb2-7339-4a2e-9fed-c4da9e4c9773")
+	)
+	(junction
+		(at 226.06 57.15)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "a96e187c-c0b8-415f-9bd4-910e60c9d652")
+	)
+	(no_connect
+		(at 228.6 54.61)
+		(uuid "cc9f4a2b-caf3-4660-92da-d7ae9e8b4d08")
+	)
+	(wire
+		(pts
+			(xy 228.6 105.41) (xy 180.34 105.41)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "04c02ad4-3c8d-489d-ab1e-32cfee0c5ea5")
+	)
+	(wire
+		(pts
+			(xy 204.47 123.19) (xy 228.6 123.19)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "061febe9-9a22-4d02-aaf3-ea36afca94b5")
+	)
+	(wire
+		(pts
+			(xy 204.47 113.03) (xy 228.6 113.03)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0655249f-21e6-4ed9-8fcb-a179403f3ada")
+	)
+	(wire
+		(pts
+			(xy 204.47 118.11) (xy 228.6 118.11)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0a2c8b09-ae59-4395-b11e-87dfdc8560bc")
+	)
+	(wire
+		(pts
+			(xy 226.06 62.23) (xy 226.06 59.69)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0a76b947-9498-4a81-bb7a-8e1c3388311a")
+	)
+	(wire
+		(pts
+			(xy 228.6 59.69) (xy 226.06 59.69)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0ab41245-cbed-4643-b0a7-f4110e7b3f78")
+	)
+	(wire
+		(pts
+			(xy 204.47 95.25) (xy 228.6 95.25)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1891449d-ca5c-491b-95b0-6fabec62d3fd")
+	)
+	(wire
+		(pts
+			(xy 204.47 110.49) (xy 228.6 110.49)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "18fb5e36-c997-4af5-a63c-164ab0442a52")
+	)
+	(wire
+		(pts
+			(xy 204.47 82.55) (xy 228.6 82.55)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1ef9bd56-642f-4ea6-b3d0-20a523e6bc61")
+	)
+	(wire
+		(pts
+			(xy 204.47 100.33) (xy 228.6 100.33)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1fa60923-05b0-4471-b44f-f790e0b607a5")
+	)
+	(wire
+		(pts
+			(xy 204.47 90.17) (xy 228.6 90.17)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2650e2c5-bf17-49a6-b4fc-ee94b0d24763")
+	)
+	(wire
+		(pts
+			(xy 154.94 105.41) (xy 151.13 105.41)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "36365a79-1bed-4152-b908-23e0b1c4c14a")
+	)
+	(wire
+		(pts
+			(xy 204.47 120.65) (xy 228.6 120.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3678e027-723f-4dd0-8dda-8afba9dd091d")
+	)
+	(wire
+		(pts
+			(xy 228.6 62.23) (xy 226.06 62.23)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4921d762-0490-4ccb-a70e-523d7fc9fdc3")
+	)
+	(wire
+		(pts
+			(xy 226.06 128.27) (xy 228.6 128.27)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "522d245f-838c-4559-a0e0-8031fe5befa0")
+	)
+	(wire
+		(pts
+			(xy 204.47 72.39) (xy 228.6 72.39)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "52bf6395-67e1-42eb-895c-7b36a40ce0aa")
+	)
+	(wire
+		(pts
+			(xy 204.47 128.27) (xy 226.06 128.27)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5d598a68-0e46-4787-bc12-7ea4efa4b9d3")
+	)
+	(wire
+		(pts
+			(xy 226.06 59.69) (xy 226.06 57.15)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "60907130-f6e4-4688-b596-9ee68182d4bf")
+	)
+	(wire
+		(pts
+			(xy 204.47 64.77) (xy 228.6 64.77)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6187ba21-309c-46bd-b5d7-019d08c960cf")
+	)
+	(wire
+		(pts
+			(xy 154.94 107.95) (xy 154.94 105.41)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6701e494-26aa-4e74-9c5f-9efbae45cb0e")
+	)
+	(wire
+		(pts
+			(xy 204.47 92.71) (xy 228.6 92.71)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "72f0efcf-e7ac-437f-8a83-f8b876477a26")
+	)
+	(wire
+		(pts
+			(xy 204.47 87.63) (xy 228.6 87.63)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "75470b8f-b6b3-4227-9049-4f71402aef8e")
+	)
+	(wire
+		(pts
+			(xy 228.6 74.93) (xy 204.47 74.93)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "86ddf86e-4d98-4004-be7a-1050c5c7649c")
+	)
+	(wire
+		(pts
+			(xy 205.74 57.15) (xy 226.06 57.15)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8d19b277-88fc-43a8-8f76-2d5fe0715439")
+	)
+	(wire
+		(pts
+			(xy 228.6 77.47) (xy 204.47 77.47)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "909275ee-46e8-41e1-90b1-3ed1ff88522c")
+	)
+	(wire
+		(pts
+			(xy 204.47 85.09) (xy 228.6 85.09)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "987e64ae-ecb4-4af8-80b6-79ce0919ee5a")
+	)
+	(wire
+		(pts
+			(xy 204.47 80.01) (xy 228.6 80.01)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "98fc3deb-423b-43da-b224-d6f62d6c8655")
+	)
+	(wire
+		(pts
+			(xy 204.47 97.79) (xy 228.6 97.79)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a1346334-ed56-4154-bdd0-7d6bfacb4b08")
+	)
+	(wire
+		(pts
+			(xy 204.47 67.31) (xy 228.6 67.31)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a6d6aa04-0cf9-4664-afd7-caf49605b49a")
+	)
+	(wire
+		(pts
+			(xy 204.47 102.87) (xy 228.6 102.87)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ad682151-deb9-470d-9651-bc886229f07e")
+	)
+	(wire
+		(pts
+			(xy 226.06 128.27) (xy 226.06 125.73)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ada7c7be-2066-4885-9b5b-79a3744b3fb4")
+	)
+	(wire
+		(pts
+			(xy 170.18 105.41) (xy 154.94 105.41)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c8cc3ab3-388b-4ab8-b070-adc834ea7a61")
+	)
+	(wire
+		(pts
+			(xy 226.06 125.73) (xy 228.6 125.73)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c9027994-064a-4dad-bee9-3fdb608811f9")
+	)
+	(wire
+		(pts
+			(xy 228.6 107.95) (xy 180.34 107.95)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cc363e8f-d344-4eda-ace7-8f24d7e07640")
+	)
+	(wire
+		(pts
+			(xy 154.94 107.95) (xy 170.18 107.95)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "dc80004b-a51a-4f6b-a7e2-770621b7a088")
+	)
+	(wire
+		(pts
+			(xy 204.47 69.85) (xy 228.6 69.85)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e4b4874b-53fb-42a0-81b9-78c612db4016")
+	)
+	(wire
+		(pts
+			(xy 226.06 57.15) (xy 228.6 57.15)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "eb4de78b-e70d-410c-a1fb-41373be76919")
+	)
+	(wire
+		(pts
+			(xy 204.47 115.57) (xy 228.6 115.57)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ee9f8a11-b8d9-4e0f-93e4-1864017cd750")
+	)
+	(label "MCSI0-D3P"
+		(at 208.28 100.33 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "3758b49d-cdb1-46f9-be45-ce22536bde31")
+	)
+	(label "MCSI0-D2P"
+		(at 208.28 92.71 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "383b7b4f-66f6-4b83-a10f-2025cddfea7d")
+	)
+	(label "MCSI0-D1P"
+		(at 208.28 77.47 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "438fa6f7-eea7-422c-a8ab-b6874bece8bf")
+	)
+	(label "MCSI0-D0P"
+		(at 208.28 69.85 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "48ccb60e-78b0-4498-be8a-c43ec724dac8")
+	)
+	(label "MCSI0-SCK"
+		(at 208.28 105.41 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "4d6f50aa-2e9f-4493-a242-93b296e80125")
+	)
+	(label "MCSI0-PWDN"
+		(at 208.28 123.19 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "538686c4-c3e7-42fc-bb4a-6dea336a21b4")
+	)
+	(label "MCSI0-D0N"
+		(at 208.28 67.31 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "626815e5-95b5-4144-8f91-9b502df425f7")
+	)
+	(label "MCSI0-D2N"
+		(at 208.28 90.17 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "73844bc2-54cd-4278-9a28-3eea25933545")
+	)
+	(label "MCSI0-D3N"
+		(at 208.28 97.79 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "8fc869e0-431c-4014-9fb8-07929fab3bb0")
+	)
+	(label "MCSI0-D1N"
+		(at 208.28 74.93 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "94bb53c5-bea1-4529-9902-7cb465c96761")
+	)
+	(label "MCSI0-CKP"
+		(at 208.28 85.09 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "a1afda60-bf16-4319-89c2-1c969b86c858")
+	)
+	(label "MCSI0-CKN"
+		(at 208.28 82.55 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "aefe0311-6707-418b-9698-d48a7338cca0")
+	)
+	(label "MCSI0-USER"
+		(at 208.28 118.11 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "ca4c86d6-f8d2-4977-af5a-f5bb4f494fcf")
+	)
+	(label "MCSI0-RSTN"
+		(at 208.28 120.65 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "cdd684c1-b3c5-4e12-893c-8f6491375f3c")
+	)
+	(label "MCSI0-MCLK"
+		(at 208.28 113.03 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "e2e6571e-8d72-4e23-b1a0-bf6c7fb801f1")
+	)
+	(label "MCSI0-SDA"
+		(at 208.28 107.95 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f9c61d8b-5995-4f74-a97e-30826f629714")
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:Ground-GND")
+		(at 204.47 64.77 270)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "153abeaa-c6bf-4101-9d00-d6f603c8ffd8")
+		(property "Reference" "#PWR?"
+			(at 204.47 64.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 198.12 64.77 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.5748 1.5748)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 204.47 64.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 204.47 64.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 204.47 64.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "fbe91100-eb5d-4b5b-8b05-16481d1d3e1c")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:Sheet_A4")
+		(at 0 0 0)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "3aad8601-201a-41e7-a1aa-d7dd167af016")
+		(property "Reference" "?"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" ""
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 0 0 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 0 0 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "@Page Count" "13"
+			(at 270.764 196.088 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "@Page No" "13"
+			(at 246.38 196.088 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "@Project Name" "Avaota Pi A"
+			(at 187.9346 190.5 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "@Update Date" "2024-02-27"
+			(at 211.328 200.66 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Comment" "GloomyGhost"
+			(at 251.968 200.66 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Company" "YuzukiHD"
+			(at 218.44 195.58 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Version" "1.0"
+			(at 277.368 191.516 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:Ground-GND")
+		(at 204.47 87.63 270)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "40ba5e4f-532b-4d53-8f5f-01661ac321b7")
+		(property "Reference" "#PWR?"
+			(at 204.47 87.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 198.12 87.63 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.5748 1.5748)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 204.47 87.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 204.47 87.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 204.47 87.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "8a806d2b-df35-41e2-b9a5-fd8303da5302")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:Ground-GND")
+		(at 204.47 128.27 270)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "4235bd49-20d0-488c-8b77-0f5d87bea441")
+		(property "Reference" "#PWR?"
+			(at 204.47 128.27 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 198.12 128.27 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.5748 1.5748)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 204.47 128.27 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 204.47 128.27 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 204.47 128.27 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "09b84929-a7f6-4471-9967-7aeff22cfef2")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:Ground-GND")
+		(at 204.47 80.01 270)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "4a53abf1-b4e4-44a9-9b67-ab0ee0f2e110")
+		(property "Reference" "#PWR?"
+			(at 204.47 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 198.12 80.01 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.5748 1.5748)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 204.47 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 204.47 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 204.47 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "8cfddcfe-eb9a-49a2-bbe0-6b3dcf17c920")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:Ground-GND")
+		(at 204.47 95.25 270)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "5866d231-0cff-4f71-9bfe-c259673d794f")
+		(property "Reference" "#PWR?"
+			(at 204.47 95.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 198.12 95.25 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.5748 1.5748)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 204.47 95.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 204.47 95.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 204.47 95.25 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "6568467e-67e7-4cf5-9c16-420a97718111")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:Ground-GND")
+		(at 204.47 72.39 270)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "657c2230-c6b2-485a-8a7f-c693438fd6a9")
+		(property "Reference" "#PWR?"
+			(at 204.47 72.39 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 198.12 72.39 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.5748 1.5748)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 204.47 72.39 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 204.47 72.39 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 204.47 72.39 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "d5c61e19-c2d7-4c55-8b4f-04e168d523d6")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:5-Voltage")
+		(at 151.13 105.41 90)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "65f545f7-98c7-4bb9-b7d0-ef819ed8a90e")
+		(property "Reference" "#PWR?"
+			(at 151.13 105.41 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "VCC-PK"
+			(at 143.51 105.41 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 151.13 105.41 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 151.13 105.41 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power-5V"
+			(at 151.13 105.41 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "a212f754-4386-495f-8754-22e96f2490fe")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:FPC-05FB-30PH20")
+		(at 233.68 91.44 0)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "7d0363e1-1a40-4e7c-b940-17f4cf1a6c30")
+		(property "Reference" "FPC2"
+			(at 240.03 49.53 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Value" "FPC-05FB-30PH20"
+			(at 240.03 51.562 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:FPC-SMD_30P-P0.50_FPC-05FB-30PH20"
+			(at 233.68 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "https://atta.szlcsc.com/upload/public/pdf/source/20210922/C2856833_974F2E309F01E02BEE862D1FB45F93FA.pdf"
+			(at 233.68 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "锁定特性:翻盖式;触点类型:双侧触点/上下接;触点数量:30P;间距:0.5mm;安装类型:卧贴;工作温度范围:-25°C~+85°C;"
+			(at 233.68 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer Part" "FPC-05FB-30PH20"
+			(at 233.68 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer" "XUNPU(讯普)"
+			(at 233.68 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Supplier Part" "C2856833"
+			(at 233.68 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Supplier" "LCSC"
+			(at 233.68 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC Part Name" "间距:0.5mm P数:30P 翻盖式 双侧触点/上下接"
+			(at 233.68 91.44 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "ff3947e7-1ce2-4396-b9a4-a757cb674633")
+		)
+		(pin "2"
+			(uuid "bea2e864-b91c-4dd1-9b4b-52a48c19abb9")
+		)
+		(pin "3"
+			(uuid "7dcd9b1a-bbf9-45d9-81c2-418a901d7d5c")
+		)
+		(pin "4"
+			(uuid "f5166e72-4137-4f5c-a631-161b26c8604a")
+		)
+		(pin "5"
+			(uuid "67e8d39b-88a5-496c-9aec-854548083c46")
+		)
+		(pin "6"
+			(uuid "fdbbbf0e-b05b-4e8a-948a-d9462e6f61e9")
+		)
+		(pin "7"
+			(uuid "ad073a15-536a-4884-aca9-5ac7581f824f")
+		)
+		(pin "8"
+			(uuid "ec4e67ee-a3b4-4e28-8f49-d0c2171034c7")
+		)
+		(pin "9"
+			(uuid "c5b31d06-b0ea-479a-ab33-435c30e399d6")
+		)
+		(pin "10"
+			(uuid "4fe9f978-e301-423e-90a5-68b8088eae97")
+		)
+		(pin "11"
+			(uuid "a5f370f5-9447-4c92-a729-93ac7b59b6dd")
+		)
+		(pin "12"
+			(uuid "3a24a2c9-1be1-4651-96a7-7c0fb46aed29")
+		)
+		(pin "13"
+			(uuid "cd4d23b0-d4be-4d42-b95d-53ea2e53bf8f")
+		)
+		(pin "14"
+			(uuid "4c41bcc5-e89a-4810-bc07-111477a68522")
+		)
+		(pin "15"
+			(uuid "30215276-a51d-4551-ac60-e0993517ee23")
+		)
+		(pin "16"
+			(uuid "32e1e675-a2cf-4201-9225-fe1462ad2118")
+		)
+		(pin "17"
+			(uuid "ea0ca002-268c-437b-8b50-1ae15ca9f7b8")
+		)
+		(pin "18"
+			(uuid "08b97bf7-cfd2-4636-8bca-ca619b0b72ca")
+		)
+		(pin "19"
+			(uuid "77dceb98-51c1-48e9-9b14-20410a873ddb")
+		)
+		(pin "20"
+			(uuid "8bebce62-b240-4c32-a1c2-d346a09c3eb4")
+		)
+		(pin "21"
+			(uuid "bc205e3f-c363-440c-89a0-d8bf51632c2a")
+		)
+		(pin "22"
+			(uuid "e7ee7982-ce08-41ed-b0a4-cde8c1479482")
+		)
+		(pin "23"
+			(uuid "dec0900c-ade6-4498-9617-63359c513854")
+		)
+		(pin "24"
+			(uuid "168128aa-5188-4596-8371-21b6145824dc")
+		)
+		(pin "25"
+			(uuid "b1594af7-1660-4f06-a300-63ecf8da0bc3")
+		)
+		(pin "26"
+			(uuid "ca2c0414-ae00-4491-b8c6-9c7c5c6fe403")
+		)
+		(pin "27"
+			(uuid "f5d78d3c-4402-4676-b5ca-6c63fdf72dfd")
+		)
+		(pin "28"
+			(uuid "ed9b779c-a59f-4054-9494-e66eb2ff41ea")
+		)
+		(pin "29"
+			(uuid "d3095aca-7fee-40de-98b2-5e4cde6bd782")
+		)
+		(pin "30"
+			(uuid "fc7c6057-6673-436f-ad3e-b18a579eee0a")
+		)
+		(pin "31"
+			(uuid "c51dac4f-0d4f-43c0-99c9-01b68a48305f")
+		)
+		(pin "32"
+			(uuid "a9f3e9ca-3933-438e-b749-4631baf5c924")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "FPC2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:电阻")
+		(at 175.26 105.41 0)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "7ec0549f-4dce-4265-85ea-a9300491cd06")
+		(property "Reference" "R127"
+			(at 177.8 107.95 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Value" "4.7K"
+			(at 167.64 107.95 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:R0603"
+			(at 175.26 105.41 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 175.26 105.41 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 175.26 105.41 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "98b34b5d-f54f-48b3-9e3b-cb246939dae5")
+		)
+		(pin "2"
+			(uuid "ed6f8815-5ef8-4803-adbb-384003c906af")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "R127")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:Ground-GND")
+		(at 204.47 110.49 270)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "9bd4da2d-35e7-4bb1-bd74-b35408d3b76c")
+		(property "Reference" "#PWR?"
+			(at 204.47 110.49 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 198.12 110.49 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.5748 1.5748)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 204.47 110.49 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 204.47 110.49 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 204.47 110.49 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "8fb5c065-d221-43f7-92c7-03b7e4761cd7")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:Ground-GND")
+		(at 237.49 49.53 180)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "a4f61ab3-ce85-4734-a2ae-f07a903891bb")
+		(property "Reference" "#PWR?"
+			(at 237.49 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 237.49 43.18 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.5748 1.5748)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 237.49 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 237.49 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 237.49 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "4b28d760-eea5-4b0b-8a74-6aad13e31814")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:5-Voltage")
+		(at 205.74 57.15 90)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "ac2932cb-0cf2-45d7-91f6-aa27fadd849c")
+		(property "Reference" "#PWR?"
+			(at 205.74 57.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "VCC-3V3"
+			(at 201.93 57.15 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 205.74 57.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 205.74 57.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power-5V"
+			(at 205.74 57.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "f77a56dc-2e76-46a3-bc54-fa3b5980281a")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:Ground-GND")
+		(at 204.47 102.87 270)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "ca237049-6ce9-4ef2-ad77-a82a80534da3")
+		(property "Reference" "#PWR?"
+			(at 204.47 102.87 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 198.12 102.87 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.5748 1.5748)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 204.47 102.87 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 204.47 102.87 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 204.47 102.87 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "5f13ea5f-f1a5-4d2c-ac66-dee17fa44443")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:Ground-GND")
+		(at 204.47 115.57 270)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "cf87f11d-c247-46e1-ae82-322c36abe164")
+		(property "Reference" "#PWR?"
+			(at 204.47 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 198.12 115.57 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.5748 1.5748)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 204.47 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 204.47 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 204.47 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "e62fc6ce-02bc-40f5-9765-77b845f7b370")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:电阻")
+		(at 175.26 107.95 0)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "d5e32279-ceea-49f7-af8e-6f47269a0e03")
+		(property "Reference" "R128"
+			(at 177.8 110.49 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Value" "4.7K"
+			(at 167.64 110.49 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:R0603"
+			(at 175.26 107.95 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 175.26 107.95 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 175.26 107.95 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "c530bed0-69e5-4259-aea1-f1e2467406c8")
+		)
+		(pin "2"
+			(uuid "8b625016-ac48-449f-aede-022b1c992a91")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "R128")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "avaota-a1--easyedapro:Ground-GND")
+		(at 237.49 133.35 0)
+		(unit 1)
+		(body_style 0)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "d95e22ac-0749-4c54-b2b8-6d05d2ee9735")
+		(property "Reference" "#PWR?"
+			(at 237.49 133.35 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 237.49 139.7 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.5748 1.5748)
+				)
+			)
+		)
+		(property "Footprint" "avaota-a1--easyedapro:"
+			(at 237.49 133.35 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 237.49 133.35 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 237.49 133.35 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "e9c6f669-5957-4f5f-965c-f4b635fb707e")
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1/b1de4dc3-a8c7-46cd-99a6-c5e216222e03"
+					(reference "#PWR?")
+					(unit 1)
+				)
+			)
+		)
+	)
+)

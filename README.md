@@ -81,6 +81,13 @@ Open: making the adb fix permanent (one byte), the System 22 core's debug hooks,
 data inside `data.unity3d`, and the gun's own MCU — it does all its computer vision
 internally and the console has no camera at all.
 
+## Hardware rebuild
+
+An Avaota A1-derived, deliberately non-fabrication-ready rebuild package for the Android console
+board is in **[hardware/android-box-rebuild](hardware/android-box-rebuild/README.md)**.
+It fixes the requested connector floorplan, records the AXP717/AXP323 software-port
+decision, and defines the gated work needed for a JLCPCB prototype release.
+
 ## Notes
 
 Device-unique identifiers (chip SID, adb serial, eFuse contents) are redacted. The

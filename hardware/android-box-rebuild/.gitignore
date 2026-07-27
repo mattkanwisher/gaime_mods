@@ -1,0 +1,13 @@
+# KiCad per-user/session files
+.history/
+*.kicad_prl
+~*.lck
+_autosave-*
+*.kicad-bak
+
+# Temporary importer root created by KiCad
+/.kicad_sch
+/android-box-rebuild-imported.kicad_pro
+
+# macOS metadata
+.DS_Store

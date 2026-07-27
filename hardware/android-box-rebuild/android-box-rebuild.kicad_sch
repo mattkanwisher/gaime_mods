@@ -1,0 +1,607 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "550d58f0-4e41-4062-aec4-b3409407efa1")
+	(paper "A4")
+	(lib_symbols)
+	(sheet
+		(at 5.08 102.87)
+		(size 12.7 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "0077da8f-ce56-4f67-9443-2c8309cd2330")
+		(property "Sheetname" "12VDC"
+			(at 5.08 102.1584 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "12_12VDC.kicad_sch"
+			(at 5.08 107.2646 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "12")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 5.08 40.64)
+		(size 12.7 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "0ec4e909-4902-45c4-8df4-dc3cca65dd58")
+		(property "Sheetname" "GPIO2"
+			(at 5.08 39.9284 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "5_GPIO2.kicad_sch"
+			(at 5.08 45.0346 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 5.08 67.31)
+		(size 12.7 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "232eee95-2b2c-46b2-a113-a099bf03c7db")
+		(property "Sheetname" "PERF2"
+			(at 5.08 66.5984 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "8_PERF2.kicad_sch"
+			(at 5.08 71.7046 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "8")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 5.08 22.86)
+		(size 12.7 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "4b3bebd6-3da5-4be4-b29b-93a522585733")
+		(property "Sheetname" "DRAM"
+			(at 5.08 22.1484 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "3_DRAM.kicad_sch"
+			(at 5.08 27.2546 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 5.08 5.08)
+		(size 12.7 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "542dc7ec-5b50-4ba9-8bff-c0b83872aa3c")
+		(property "Sheetname" "POWER"
+			(at 5.08 4.3684 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "1_POWER.kicad_sch"
+			(at 5.08 9.4746 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "1")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 5.08 93.98)
+		(size 12.7 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "6b3f1319-0b14-4e96-9731-c7ef5dd13c4e")
+		(property "Sheetname" "GMAC1"
+			(at 5.08 93.2684 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "11_GMAC1.kicad_sch"
+			(at 5.08 98.3746 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "11")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 5.08 111.76)
+		(size 12.7 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "82acd005-cebc-4405-b296-5163daa64905")
+		(property "Sheetname" "PERF3"
+			(at 5.08 111.0484 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "13_PERF3.kicad_sch"
+			(at 5.08 116.1546 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "13")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 5.08 31.75)
+		(size 12.7 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "8c3baec2-0090-484a-8eaa-e8e37ca0b85e")
+		(property "Sheetname" "GPIO1"
+			(at 5.08 31.0384 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "4_GPIO1.kicad_sch"
+			(at 5.08 36.1446 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 5.08 120.65)
+		(size 12.7 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "b1de4dc3-a8c7-46cd-99a6-c5e216222e03")
+		(property "Sheetname" "CAMERA"
+			(at 5.08 119.9384 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "14_CAMERA.kicad_sch"
+			(at 5.08 125.0446 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "14")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 5.08 58.42)
+		(size 12.7 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "bf1f2220-7a19-4b82-85d9-8f4f3952d256")
+		(property "Sheetname" "BLOCK"
+			(at 5.08 57.7084 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "7_BLOCK.kicad_sch"
+			(at 5.08 62.8146 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "7")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 5.08 85.09)
+		(size 12.7 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "dc0ecd1c-75b3-4438-8167-4a3b208ce09d")
+		(property "Sheetname" "GMAC0"
+			(at 5.08 84.3784 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "10_GMAC0.kicad_sch"
+			(at 5.08 89.4846 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "10")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 5.08 13.97)
+		(size 12.7 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "ddc86c6b-abe3-42eb-b205-538f9cb6b447")
+		(property "Sheetname" "SYSTEM"
+			(at 5.08 13.2584 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "2_SYSTEM.kicad_sch"
+			(at 5.08 18.3646 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 5.08 49.53)
+		(size 12.7 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "e3c994c8-a555-4d5b-81b7-42854d3221b9")
+		(property "Sheetname" "PERF1"
+			(at 5.08 48.8184 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "6_PERF1.kicad_sch"
+			(at 5.08 53.9246 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "6")
+				)
+			)
+		)
+	)
+	(embedded_fonts no)
+)

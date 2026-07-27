@@ -13,3 +13,6 @@ apps/*/out/
 
 # app signing keys stay local
 apps/*/debug.keystore
+
+# local upstream hardware reference clone; provenance is pinned in conversion-audit.md
+hardware/Avaota-A1/
