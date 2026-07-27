@@ -1134,3 +1134,61 @@ must share one descriptor or the port silently drops to 9600.
 **Note:** the `SW1`/FEL button snapped off during disassembly. Not fatal — it is a momentary
 switch, so briefly shorting its pads (or the adjacent `T35`/`T36` test points) does the same
 thing. The UART is in any case the better access path for everything except writing flash.
+
+## 15. ADB working, and our own app running on the console
+
+```
+$ adb devices
+List of devices attached
+90275779908287d1ed4     device
+
+$ adb shell getprop ro.product.model
+A527 PRO
+```
+
+The adb serial is derived from the chip SID captured over FEL much earlier
+(`0300ff10:90204824:75779908:287d1ed4`), so it is unmistakably this unit.
+
+### What actually blocked it
+
+Five patches were applied blind over several rounds and none produced enumeration. The
+serial console found the reason in one `logcat`:
+
+```
+avc: denied { setcurrent } for scontext=u:r:adbd:s0 tcontext=u:r:adbd:s0 permissive=0
+adbd: main.cpp:162] Could not set SELinux context
+```
+
+**`ro.secure=0` was the thing breaking adb.** With `ro.secure` clear, `should_drop_privileges()`
+returns false, so adbd tries to stay root and calls `selinux_android_setcon(u:r:su:s0)`. A
+`user` build's policy contains no such transition, the kernel denies `setcurrent`, and adbd
+`LOG(FATAL)`s — restarting every five seconds forever. The patch intended to *loosen* security
+is precisely what stopped adb running. Everything else had been correct all along: the UDC was
+present as `4100000.udc-controller` (the name derived from Linux's DT naming rule was right),
+functionfs was mounted, and all five properties had applied.
+
+`service.adb.root` is not read-only, so `setprop service.adb.root 0` forces the drop at runtime
+and adbd goes from `restarting` to `running` without touching flash.
+
+### Our app on the device
+
+```bash
+adb install -r -g apps/gaime-hello/out/gaime-hello.apk
+adb shell appops set nu.hyperworks.gaimehello SYSTEM_ALERT_WINDOW allow
+adb shell am start -n nu.hyperworks.gaimehello/.HelloActivity
+adb exec-out screencap -p > work/screen.png
+```
+
+Confirmed on screen. The app installs to `/data`, not the firmware, so it cannot affect boot
+and `adb uninstall` removes it completely.
+
+### Still to do
+
+`service.adb.root` is runtime-only and does not survive a reboot, so it must be re-applied over
+the serial console each boot. The permanent fix is a **one-byte revert of `ro.secure=0` back to
+`1`** in `build.prop`, keeping `ro.debuggable=1` so the serial console service stays. That needs
+FEL; the `SW1` button snapped off during disassembly but it is a momentary switch, so shorting
+its pads (or `T35`/`T36` beside it) works.
+
+Kernel, for the record: `Linux 5.15.119`, built `root@dashine-namco`, Fri Sep 12 2025,
+`Machine model: sun55iw3`, CPU `0x412fd050` (Cortex-A55).
