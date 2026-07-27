@@ -79,15 +79,96 @@ footprint issues. Treat this count as the conversion backlog, not as a release w
 The next reduction must start by importing/reconstructing the source fabrication rules;
 blanket exclusions would hide real defects.
 
+## Rev-P1 connector placement snapshot
+
+The first connector-only PCB transformation has now been applied. It places J5 power
+USB-C at `(109.6545, 139.6495) mm` and J6 USB-C host at
+`(126.114, 139.6495) mm`, removes DC1/USB2/USB3, and replaces HDMI USB1 with the
+horizontal HCTL `HDMI-01` / JLCPCB `C2906135` footprint at `(140.124, 135.455) mm`,
+rotation `0 deg`. A top-side 3D render and position export both complete successfully.
+The corrected USB-C datum is 3.9055 mm inboard of the
+bottom board edge and gives a modeled shell-front overhang of 1.267 mm, matching the
+original USB3 receptacle. Moving the two footprints outward by 6.2995 mm exposed one
+abandoned local VBUS track beneath J6; the alignment pass removed it.
+
+The exact HDMI replacement preserves all 19 signal nets and the grounded shell
+assignment. Its four TMDS pairs are rejoined to the preserved corridor with a maximum
+added positive/negative pair mismatch of 0.0001 mm; CEC, DDC, HPD and +5 V are also
+connected. Ground signal pins and the four shell stakes use solid zone connections.
+Current full-board DRC completes with 2,709 inherited/staging violations, 127
+unconnected items, zero shorts and zero invalid-outline findings. There are no
+unconnected items in the HDMI area. Eight J5/J6 copper-edge flags and seven clipped
+J5/J6/HDMI silkscreen-edge flags are caused by the intentional connector-edge
+engagement and still require review against the selected receptacle drawings and
+fabricator rules. The unconnected count is expected
+at this stage: the new PD VBUS/CC nets, host VBUS/CC/USB2 nets, and other previously
+pruned subsystems must be reconciled with their matching schematic circuitry.
+
+## Ethernet connector prune
+
+RJ1 and RJ2, their ETH0/ETH1 edge labels, and 53 track/via items directly touching
+their pads have been removed. The neighboring IR receiver and unrelated routing were
+not included. The GMAC PHYs, magnetics-side support components and upstream nets remain
+on the PCB until their matching schematic sheets can be pruned in a controlled pass.
+
+After this change, position export and 3D render still pass. DRC reports 2,679 findings
+and 52 unconnected items, with zero shorts and zero invalid-outline findings. The
+parked Ethernet-side nets account for part of the intentional dangling/unconnected
+backlog and are not a fabrication waiver.
+
+## M.2 2230 NVMe staging pass
+
+The complete PCB component populations from imported sheets `10_GMAC0` and
+`11_GMAC1` have been removed: 64 PHY/support footprints and 341 directly attached
+track/via items. J7, a UMAX `91302-42-067RDM` M-key connector (JLCPCB/LCSC
+`C601195`), is placed at `(184.5, 122.0) mm`, rotation `90 deg`. H2 is a 2.8 mm
+NPTH 2230 mounting datum at `(154.5, 122.0) mm`. The 30 x 22 mm module envelope is
+drawn on `Dwgs.User`.
+
+The staged lane mapping reuses the imported T527 combo-PHY receive nets and the
+post-AC-coupling transmit nets at C219/C220. J7 clock, control and 3.3 V nets are
+named but remain unrouted. Pre-existing copper was cleared from the connector pads
+and mounting hole; the neighboring IR receiver was preserved, including a small
+inner-layer jog around J7's upper mechanical anchor.
+
+After this pass, position export and 3D render pass. DRC reports 2,848 inherited and
+staging findings plus 130 unconnected items, with zero shorts and zero invalid-outline
+findings. The added unconnected items are expected from the removed GMAC circuits and
+unrouted M.2 nets. This is a placement/net-assignment checkpoint, not a fabrication
+waiver. See `nvme-migration.md` for the electrical blockers.
+
+## External eDP/DisplayPort prune
+
+The board label `DP` identified U15, the 24-pin internal eDP panel connector; it was
+not the retained HDMI port. U15 and its 20 connector-side support footprints were
+removed: D10-D12, C190-C199, C223/C224, and R56/R57/R60-R62. The pass also removed
+518 track/via items on dedicated eDP lane, AUX and HPD nets, 14 local GND/DCDC4
+fanout items, and the `DP` silkscreen label. HDMI USB1 and its existing route remain
+unchanged.
+
+The SoC's internal eDP-domain rail decoupling is deliberately retained until the
+power-domain schematic is audited; unused-domain power state must be resolved in the
+schematic and firmware rather than by deleting core capacitors from placement alone.
+The imported `6_PERF1` schematic still contains the eDP connector circuit and must be
+synchronized before release.
+
+After the eDP PCB prune, position export and 3D render pass. DRC reports 2,783
+inherited/staging findings and 127 unconnected items, with zero shorts and zero
+invalid-outline findings.
+
 ## Next controlled changes
 
 1. Save an immutable import tag/hash before editing the electrical core.
 2. Reconcile the imported net classes and via rules with the Avaota fabrication files
    and the intended JLCPCB eight-layer stack-up.
 3. Preserve the zero-short/valid-outline baseline while changing edge connectors.
-4. Prune GMAC0/1, camera, display and other unused carrier blocks one subsystem at a
-   time, with schematic/PCB parity checks after each deletion.
+4. Remove the GMAC0/1 schematic sheets and the eDP section of `6_PERF1` to match the
+   completed PCB prunes, then remove camera and other unused carrier blocks one
+   subsystem at a time.
 5. Replace the barrel connector with a reviewed 9 V USB-C PD sink feeding the existing
    protected `DCIN-12V` path.
 6. Replace the dual USB-A with one USB 2.0 Type-C host and keep HDMI in its reference
    routing corridor after the mechanical outline and selected connector drawings are verified.
+7. Complete the staged M.2 design: disconnect/reassign the combo-PHY reference-clock
+   balls, add PCIe control GPIOs and a sequenced 3.3 V supply, then route and simulate
+   the PCIe Gen2 lane against the released stack-up.

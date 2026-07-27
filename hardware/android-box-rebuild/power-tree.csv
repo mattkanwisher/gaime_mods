@@ -6,7 +6,7 @@ AXP717,DCDC3,software-adjusted,reference,"VCC-DRAM","Match the selected LPDDR4 M
 AXP717,CPUSLDO,0.9 V,reference,"VDD-CPUS","Import unchanged and verify power sequence"
 AXP717,BLDO2,1.8 V,reference,"VDD18-LPDDR","Import unchanged and verify decoupling/enable state"
 AXP717,BLDO1,1.8 V,reference,"VCC-PG","Import unchanged and verify consumers after peripheral pruning"
-AXP717,BLDO3,1.8 V,reference,"PE/PD/PK/PJ/MCSI/PCIe/HDMI/EDP I/O domains","Retain required HDMI consumers; remove unused branches only after net audit"
+AXP717,BLDO3,1.8 V,reference,"PE/PD/PK/PJ/MCSI/PCIe/HDMI/EDP I/O domains","Retain required HDMI/PCIe consumers; external eDP is removed, but disable/prune its internal domain only after schematic and firmware power audit"
 AXP717,BLDO4,1.8 V,reference,"VCC-PL","Import unchanged"
 AXP717,CLDO1,1.8 V,reference,"VCC-PC","Retain for eMMC I/O domain and confirm switching profile"
 AXP717,CLDO2,1.8 V,reference,"VCC-EFUSE","Import unchanged"
@@ -16,3 +16,4 @@ AXP717,ALDO4,1.8 V,reference,"AVCC; PLL; DRAM analog; DCXO; ADC","Preserve filte
 AXP323,DCDC1/DCDC2,0.9 V,reference,"VDD-CPUB","Preserve the Avaota current-sharing topology and sequence"
 AXP323,DCDC3,0.9 V,reference,"VDD-DNR","Import unchanged and verify sequence"
 Load switch J6,USB1_VBUS,5 V,BLOCKER,"same-edge USB-C host J6","Set current limit and Type-C Rp consistently; default off until firmware enables it"
+TBD switched buck,NVME_3V3_SW,3.3 V,BLOCKER,"M.2 2230 connector J7 and SSD decoupling","Select source rail and regulator from approved SSD inrush/peak load; add sequencing, current limit, discharge and measured transient margin"

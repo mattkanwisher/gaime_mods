@@ -9,14 +9,21 @@ to avoid rerouting the SoC-side HDMI and crossing the LPDDR/core region.
 |---|---|---|---|
 | `J5` | USB-C PD power input | Barrel `DC1`, origin `(109.6545, 136.8555) mm` | Negotiate 9 V / 3 A and feed the existing protected `DCIN-12V` input |
 | `J6` | One USB 2.0 Type-C host | Dual USB-A `USB2`, origin `(126.114, 134.970) mm` | Reuse `USB1-DP/DM`; add CC Rp, ESD and a controlled 5 V VBUS switch |
-| `J1` | Horizontal right-angle HDMI Type-A | HDMI `USB1`, origin `(140.124, 132.247) mm`, rotation `-90 deg` | Keep connector corridor and existing HDMI routing |
+| `USB1` | Horizontal right-angle HDMI Type-A | Imported HDMI origin `(140.124, 132.247) mm`, rotation `-90 deg` | Replace with horizontal edge footprint and reroute HDMI locally |
 
-The intended left-to-right row in the current board view is power USB-C, host USB-C,
-then HDMI. The coordinates are imported footprint origins, not final shell centerlines.
+The left-to-right row in the current board view is now staged as power USB-C, host
+USB-C, then HDMI. J5 is at `(109.6545, 139.6495) mm`, J6 is at
+`(126.114, 139.6495) mm`, and horizontal HDMI `USB1` is at
+`(140.124, 135.455) mm`, rotation `0 deg`. These are footprint origins, not shell
+centerlines. The USB-C origins are
+3.9055 mm inboard of the bottom Edge.Cuts centerline and the modeled shell fronts
+extend 1.267 mm beyond it, mirroring the original USB3 connector's edge engagement.
 
-The original `USB3` USB-C on the opposite edge will be removed from the production
+The original `USB3` USB-C on the opposite edge has been removed from this placement
 variant. USB0 FEL/device recovery remains available on internal test pads. The second
-USB 2.0 host and the USB SuperSpeed lanes are not externally populated.
+USB 2.0 host and the USB SuperSpeed lanes are not externally populated. U15, the
+separate internal eDP/DisplayPort panel connector marked `DP`, and its connector-side
+lane/AUX/HPD circuit have also been removed; this does not affect HDMI USB1.
 
 ## Power conversion: barrel to USB-C
 
@@ -60,23 +67,50 @@ USB-C VBUS + CC1/CC2 -> autonomous PD sink requesting 9 V / 3 A
 
 ## HDMI
 
-Keep the existing full-size right-angle Type-A HDMI position and orientation. Validate
-the selected connector against the footprint, but preserve the existing TMDS, DDC,
-CEC, HPD, +5 V and ESD routing unless the connector pinout forces a local change.
+The imported `HDMI-001C` footprint had its 19-pin row vertical in board view. It is now
+replaced by the selected HCTL `HDMI-01` / JLCPCB `C2906135` horizontal right-angle
+Type-A receptacle at `(140.124, 135.455) mm`, rotation `0 deg`. The shell face is flush
+with the bottom Edge.Cuts datum and the footprint courtyard has 1.415 mm clearance to
+J6. Pads 1-19 retain the imported HDMI nets; shell stakes 20-23 and HDMI ground pins
+use solid ground-plane connections.
+
+The four TMDS pairs are locally rejoined to the preserved Avaota routing corridor.
+The added positive and negative paths are matched to within 0.0001 mm by geometry;
+CEC, DDC clock/data, HPD and +5 V are also connected. KiCad DRC reports no short and
+no unconnected item in the HDMI area. The 0.102 mm signal width remains provisional:
+the completed route must be recalculated for 100-ohm differential impedance once the
+JLCPCB eight-layer stack-up is selected.
 
 ## Implementation order
 
 1. Freeze the three shell centerlines and panel openings from the enclosure drawing.
-2. Validate the selected XUNPU `TYPEC-304-BCP16` USB-C and `HDMI-001C` HDMI drawings
-   against the imported footprints and measured enclosure.
-3. Replace DC1 with the PD sink/protection block and connect it locally to the existing
-   `DCIN-12V` entry.
-4. Replace USB2 with J6 and reconnect only `USB1-DP/DM` plus its local VBUS circuitry.
-5. Remove USB3 and unused edge connectors/peripherals one subsystem at a time.
+2. Validate the selected XUNPU `TYPEC-304-BCP16` USB-C and HCTL `HDMI-01` drawings
+   against their footprints and the measured enclosure.
+3. Add the PD sink/protection block behind the staged J5 footprint and connect it
+   locally to the existing `DCIN-12V` entry.
+4. Add the CC, ESD and switched-VBUS circuitry behind staged J6, then reconnect
+   `USB1-DP/DM` locally.
+5. Remove other unused edge connectors/peripherals one subsystem at a time. The
+   external eDP interface has completed this PCB prune step.
 6. Refill zones and compare ERC/DRC against the zero-short, valid-outline import
    baseline after every subsystem change.
 
-## Blockers before footprint replacement
+## Placement-pass status and blockers
+
+The PCB placement pass is implemented reproducibly by
+`scripts/stage_same_edge_connectors.py`. It removed DC1, USB2 and USB3 plus 155 local
+fanout track/via items, duplicated the imported TYPEC-304-BCP16 footprint as J5/J6,
+renamed the edge silkscreen to POWER/HOST and refilled zones. The script now derives
+the J5/J6 Y datum by mirroring the original USB3 edge inset; the standalone
+`scripts/align_usbc_to_edge.py` applies the same correction to an already-staged board.
+It does not add a PD controller or claim the new nets are routed.
+
+`scripts/replace_hdmi_horizontal.py` replaces the imported side-oriented HDMI with the
+exact HCTL `HDMI-01` footprint, preserves its net assignments, removes conflicting
+local copper and sets the ground pins to solid zone connections. The companion
+`scripts/route_hdmi_local.py` reconnects TMDS, CEC, DDC, HPD and +5 V to the preserved
+corridor. The production part is selected; enclosure fit and stack-up impedance remain
+release gates.
 
 - Verified manufacturer drawings and enclosure fit for the selected connectors.
 - Enclosure shell centerlines, panel openings, wall thickness and plug keepouts.

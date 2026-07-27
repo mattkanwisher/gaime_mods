@@ -6,13 +6,29 @@ now fixed at the concept level and deliberately follows the reference connector 
 
 - original DC barrel location: USB-C PD power input;
 - original dual USB-A location: one USB 2.0 USB-C host port;
-- original HDMI location and route corridor: horizontal right-angle HDMI Type-A;
+- same connector edge: horizontal right-angle HDMI Type-A;
 - all other external connectors are removed from the production baseline.
 
 This is **not fabrication-ready**, but it is now a real editable KiCad project. The
 pinned Avaota v1.4 EasyEDA source has been converted into a 14-sheet schematic and a
-routed eight-layer PCB. The imported reference has not yet been pruned or mechanically
-adapted, and its conversion findings must be cleared before release. See
+routed eight-layer PCB. The PCB now contains the first same-edge placement pass: J5
+USB-C power and J6 USB-C host replace the barrel, dual USB-A and opposite-edge USB-C,
+and the imported vertical HDMI footprint has been replaced by the selected HCTL
+`HDMI-01` / JLCPCB `C2906135` horizontal right-angle Type-A receptacle. Both USB-C receptacle
+origins are aligned 3.9055 mm inboard of the bottom board edge, matching the insertion
+depth of the original USB3 receptacle; their modeled shell fronts overhang the edge by
+1.267 mm. Their new local nets remain intentionally unrouted until the PD/protection
+and USB host circuits are added to the schematic. Both Ethernet PHY component groups have now been removed from the
+PCB and the resulting area contains a staged M-key M.2 2230 NVMe connector and
+mounting hole. The external U15 eDP/DisplayPort panel connector, its protection and
+coupling parts, and its dedicated PCB routing have also been removed; HDMI is retained.
+The HDMI pad row retains the original 19 signal-net assignments. Its four TMDS pairs
+are now locally rejoined to the preserved Avaota corridor, with CEC, DDC, HPD and +5 V
+also connected. The local fanout uses the imported 0.102 mm geometry and is pair-matched,
+but it is provisional until those dimensions are recalculated against the ordered
+JLCPCB stack-up. The PCIe
+clock, control, 3.3 V power and differential routing are not implemented yet.
+The conversion findings must also be cleared before release. See
 [`conversion-audit.md`](conversion-audit.md) and
 [`jlcpcb-release-plan.md`](jlcpcb-release-plan.md).
 
@@ -23,13 +39,14 @@ adapted, and its conversion findings must be cleared before release. See
 | SoC | Allwinner T527/A527, BGA664 | Preserve the Avaota A1 symbol, escape, clocks, straps and decoupling |
 | RAM | 2 GB LPDDR4 baseline | Select an exact reference-supported MPN before schematic freeze; 4 GB is an assembly option only after boot validation |
 | Storage | 32 or 64 GB eMMC 5.1, 8-bit HS400 | Select exact MPN and bootloader timing profile before release |
+| Expansion storage | M-key M.2 2230 NVMe over the T527 PCIe 2.1/USB3 combo PHY | J7/H2 placement and pad nets staged; complete the schematic, 3.3 V supply, clock/control routing and PCIe SI review |
 | Main PMIC | AXP717 | Reuse the Avaota A1 core power sheet and sequencing |
 | CPU PMIC | AXP323 | Reuse the Avaota A1 core power sheet and sequencing |
-| Video | Horizontal right-angle HDMI 2.0 Type-A in the reference location | Preserve native HDMI connector corridor and existing TMDS routing |
+| Video | HCTL HDMI-01 / JLCPCB C2906135, horizontal right-angle HDMI Type-A | Exact footprint and 3D model placed; TMDS/DDC/CEC/HPD/+5 V locally routed; verify enclosure and solve 100-ohm geometry against the released stack-up |
 | Power | Dedicated USB-C PD sink replacing the barrel jack | Negotiate 9 V / 3 A into the existing protected `DCIN-12V` path; no data on this connector |
 | Accessory port | One USB 2.0 host USB-C replacing the dual USB-A | Reuse one existing host pair; add Rp, ESD and a current-limited VBUS switch |
 | Debug | UART, JTAG, FEL and reset | Retain accessible pads or headers on prototypes |
-| Excluded | Ethernet, Wi-Fi, SD, camera, audio, PCIe and panel display | Prune only after the unmodified Avaota core sheets are imported |
+| Excluded | Ethernet, Wi-Fi, SD, camera, audio and panel display | Ethernet and external eDP PCB circuits removed; prune other unused circuits one subsystem at a time |
 
 ## Important software consequence
 
@@ -43,7 +60,16 @@ userspace. This is lower hardware risk than redesigning undocumented PMIC circui
 
 - [`android-box-rebuild.kicad_pro`](android-box-rebuild.kicad_pro) - open this file in KiCad to load the Rev-P1 project.
 - [`android-box-rebuild.kicad_sch`](android-box-rebuild.kicad_sch) - imported full Avaota schematic hierarchy.
-- [`android-box-rebuild.kicad_pcb`](android-box-rebuild.kicad_pcb) - imported routed eight-layer Avaota PCB baseline; not the final Rev-P1 layout.
+- [`android-box-rebuild.kicad_pcb`](android-box-rebuild.kicad_pcb) - routed eight-layer Avaota PCB with the Rev-P1 connector placement staged; not the final routed layout.
+- [`scripts/stage_same_edge_connectors.py`](scripts/stage_same_edge_connectors.py) - reproducible KiCad Python transformation used for the connector placement pass.
+- [`scripts/align_usbc_to_edge.py`](scripts/align_usbc_to_edge.py) - derives the mirrored USB-C edge datum, aligns J5/J6 and removes conflicting abandoned local copper.
+- [`scripts/replace_hdmi_horizontal.py`](scripts/replace_hdmi_horizontal.py) - places the exact HCTL HDMI-01 footprint, preserves the 19 signal nets and grounded shell, and clears its local reroute corridor.
+- [`scripts/route_hdmi_local.py`](scripts/route_hdmi_local.py) - reproducibly reconnects the four TMDS pairs and HDMI control/power nets to the preserved Avaota corridor.
+- [`datasheets/HCTL-HDMI-01_C2906135.pdf`](datasheets/HCTL-HDMI-01_C2906135.pdf) - selected connector mechanical drawing.
+- [`scripts/remove_ethernet_connectors.py`](scripts/remove_ethernet_connectors.py) - reproducible removal of RJ1/RJ2, ETH0/ETH1 silkscreen and direct jack fanout.
+- [`scripts/stage_nvme_2230.py`](scripts/stage_nvme_2230.py) - reproducible GMAC PCB prune and M.2 2230 placement/net staging pass.
+- [`scripts/remove_edp_interface.py`](scripts/remove_edp_interface.py) - reproducible removal of U15 and the external eDP lane/AUX/HPD circuit and routing.
+- [`nvme-migration.md`](nvme-migration.md) - J7 pin map, placement, sources and remaining NVMe design blockers.
 - [`conversion-audit.md`](conversion-audit.md) - source provenance, import repairs, validation counts and conversion backlog.
 - [`connector-migration.md`](connector-migration.md) - current connector/net mapping and the controlled same-edge conversion sequence.
 - [`mechanical-datums.csv`](mechanical-datums.csv) - enclosure measurements required before connector placement is locked.
@@ -63,10 +89,11 @@ userspace. This is lower hardware risk than redesigning undocumented PMIC circui
    manufacturing constraints; keep a frozen hash of the original conversion.
 2. Freeze measured enclosure datums for the same-edge USB-C power, USB-C host and HDMI row.
 3. Remove unused external peripherals without changing core nets or power sequencing.
-4. Add the 9 V USB-C PD sink and adapt the single USB host protection, then prove the
-   power and load-switch limits on the schematic.
+4. Add the 9 V USB-C PD sink, adapt the single USB host protection, and implement the
+   M.2 3.3 V regulator/switch plus PCIe clock and control nets on the schematic.
 5. Select exact SoC, DRAM, eMMC and PMIC MPNs, verify the selected connector drawings,
    and agree with JLCPCB how the fine-pitch BGAs and any consigned parts will be handled.
-6. Preserve the reference DRAM placement/escape and route the changed edge I/O around it.
+6. Preserve the reference DRAM placement/escape and route the changed edge I/O and
+   PCIe Gen2 pair around it using the released stack-up impedance geometry.
 7. Complete every release gate in `jlcpcb-release-plan.md`, build a small prototype lot,
    and use the staged bring-up plan before attempting a firmware port.

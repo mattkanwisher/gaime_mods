@@ -17,6 +17,7 @@ same-edge USB-C PD power (9 V / 3 A negotiated; no data)
                               |  --> same-edge horizontal HDMI Type-A
                               |  --> USB0 FEL on internal test pads
                               |  --> USB1 host switch --> same-edge USB-C x1
+                              |  --> PCIe/USB3 combo PHY --> M.2 2230 NVMe x1
                               |  --> UART0 / JTAG
                               +  --> FEL, reset and power controls
 ```
@@ -38,8 +39,9 @@ pinned reference and an explicit power/boot review.
 | JTAG | `PF0` TMS, `PF5` TCK, `PF3` TDO, `PF1` TDI |
 | USB0 | FEL/device retained on internal prototype pads; not an external production connector |
 | USB1 | One USB 2.0 host on the same-edge USB-C receptacle |
-| USB2 | Not externally populated in Rev-P1 |
+| USB2 combo PHY | Repurposed from USB3 to PCIe x1 for J7 M.2 2230 NVMe; no external USB3 |
 | HDMI | Native HDMI block and CEC; no external bridge; keep the reference connector corridor |
+| eDP | External U15 panel connector and connector-side circuit removed; internal SoC-domain decoupling retained pending power audit |
 
 ## Input-power decision
 
@@ -64,9 +66,19 @@ port.
 
 ## HDMI
 
-- Keep the horizontal right-angle HDMI Type-A connector in the reference edge corridor.
+- Keep the selected HCTL HDMI-01 horizontal right-angle Type-A connector on the
+  reference edge and validate its staged local fanout against the released stack-up.
 - Preserve the existing 100-ohm TMDS routing, source termination, DDC pull-ups, CEC,
   HPD, +5 V current limiting and connector-side ESD placement.
+
+## M.2 NVMe
+
+- J7 is an M-key M.2 2230 PCIe x1 connector in the former Ethernet PHY area.
+- Dedicate the T527 PCIe 2.1/USB3 combo PHY to PCIe; J6 remains USB 2.0 only.
+- Add a sequenced, current-limited 3.3 V SSD supply rather than assuming an imported
+  PMIC rail has enough transient margin.
+- Complete the reference clock and PERST#/CLKREQ#/WAKE# nets in the synchronized
+  schematic before routing. See `nvme-migration.md`.
 
 ## Clocking and controls
 

@@ -39,11 +39,14 @@ hardware acceptance test because its PMIC description must be ported.
 
 Populate blank eMMC, test identification and destructive read/write on the prototype,
 then program the baseline Avaota-derived system image. Verify HS400 only after lower
-speed modes are reliable.
+speed modes are reliable. Populate J7 power and an approved 2230 SSD only after the
+3.3 V rail passes unloaded and dummy-load sequencing/inrush tests. Train PCIe at Gen1,
+exercise sustained NVMe I/O and power cycling, then enable Gen2 and repeat thermal/SI
+testing.
 
 ### Stage 4 - video and USB
 
-Bring up HDMI in its preserved corridor, then J6. Test hot plug, ESD, VBUS current
+Bring up HDMI in its newly routed horizontal corridor, then J6. Test hot plug, ESD, VBUS current
 limits, HDMI modes and thermal behavior before attaching the light gun.
 
 ### Stage 5 - software port
@@ -57,5 +60,5 @@ topology. Only after Android boots reliably should game userspace and the gun be
 - Input droop or thermal limiting appears at the validated load.
 - DRAM training is intermittent at any tested corner.
 - X-ray shows marginal BGA joints or via-in-pad defects.
-- eMMC, HDMI or USB signal integrity fails at its target mode.
+- eMMC, NVMe, HDMI or USB signal integrity fails at its target mode.
 - J6 advertises or supplies more current than the input budget permits.

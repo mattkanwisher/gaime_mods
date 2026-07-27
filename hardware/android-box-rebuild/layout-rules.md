@@ -22,27 +22,32 @@ Provisional functional stack:
 
 1. Fix outline, mounting holes and measured connector datums for the same-edge row:
    USB-C PD power in the barrel corridor, one USB-C host in the dual USB-A corridor,
-   and horizontal HDMI in its reference corridor.
+   and horizontal HDMI in its staged same-edge corridor.
 2. Preserve the Avaota SoC/LPDDR placement, orientation, escape and layer assignment.
 3. Preserve eMMC, AXP717, AXP323, crystal and critical-decoupling relationships.
 4. Place the PD sink/protection near J5 and the host load switch near J6.
-5. Place ESD at the connector side of each protected interface.
-6. Keep all PMIC switch nodes outside the LPDDR, HDMI, USB and clock corridors.
+5. Preserve the staged J7/H2 M.2 2230 datum in the former Ethernet area and confirm
+   the complete SSD z-height/screw-access envelope before routing.
+6. Place ESD at the connector side of each protected interface.
+7. Keep all PMIC switch nodes outside the LPDDR, HDMI, USB, PCIe and clock corridors.
 
 ## Routing priority
 
 1. LPDDR4 data/strobe byte lanes and address/command/clock, copied from the template.
 2. eMMC HS400 clock/strobe/data.
-3. Preserve the existing HDMI TMDS plus DDC/CEC/HPD routing.
-4. The single external USB 2.0 differential pair.
-5. Crystals and analog reference rails.
-6. PMIC feedback, switch nodes and high-current input/host power.
-7. Remaining control and GPIO.
+3. Preserve the Avaota HDMI corridor and revalidate the staged HDMI-01 TMDS plus
+   DDC/CEC/HPD local fanout against the released stack-up.
+4. PCIe Gen2 x1 and its 100 MHz differential reference clock to J7.
+5. The single external USB 2.0 differential pair.
+6. Crystals and analog reference rails.
+7. PMIC feedback, switch nodes and high-current input/host/NVMe power.
+8. Remaining control and GPIO.
 
 ## Hard constraints
 
 - No split reference plane under LPDDR4, eMMC, HDMI, USB or clocks.
-- HDMI is 100 ohms differential; USB 2.0 is 90 ohms differential. Values must be
+- HDMI is 100 ohms differential, USB 2.0 is 90 ohms differential and PCIe is 85 ohms
+  differential. Values must be
   solved for the ordered stack-up and included in the fab notes.
 - Do not alter DRAM topology, lane grouping, termination or match targets without an
   Allwinner/Avaota design-rule source and an SI review.
@@ -60,7 +65,7 @@ Provisional functional stack:
 
 - Independent schematic review before layout.
 - JLCPCB fabrication and assembly capability review before fanout/stack-up lock.
-- SI review of LPDDR4, eMMC, HDMI and USB before release.
+- SI review of LPDDR4, eMMC, HDMI, USB and PCIe before release.
 - Power-integrity review with peak/transient current and voltage-drop estimates.
 - ERC, DRC, netlist-to-layout, BOM-to-footprint, polarity and pin-1 checks with no
   unresolved boot-critical waivers.

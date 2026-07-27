@@ -1,9 +1,10 @@
 reference,interface,pins_or_signals,direction,voltage,status,notes
-J1,Horizontal HDMI Type-A same edge,"TMDS0/1/2/CLK; DDC; CEC; HPD; +5V",output,"1.8 V logic / HDMI levels",required,"Keep native T527/A527 HDMI in the reference connector corridor"
+USB1,HCTL HDMI-01 horizontal Type-A same edge,"TMDS0/1/2/CLK; DDC; CEC; HPD; +5V",output,"1.8 V logic / HDMI levels",routed,"JLCPCB C2906135; local fanout staged in the native T527/A527 HDMI corridor; re-solve impedance for released stack-up"
 J2,Debug UART,"GND; TX; RX",bidirectional,3.3 V,required,"UART0 PB09/PB10; 115200 8N1; prototype access required"
 J3,JTAG,"VTREF; TDI; TMS; TCK; TDO; GND",bidirectional,3.3 V,required,"PF1/PF0/PF5/PF3; pads may replace production header"
 J5,Power-only USB-C PD same edge,"VBUS; GND; CC1; CC2",input,"9 V / 3 A PD contract",BLOCKER,"Replace DC1; PD sink and UVLO feed the existing reverse-protected DCIN-12V path; no USB data"
 J6,USB-C host same edge,"VBUS; GND; CC1; CC2; D+; D-",output/host,"5 V and USB2",BLOCKER,"Replace USB2 dual USB-A; use USB1-DP/DM; Rp must match the VBUS switch limit"
+J7,M-key M.2 2230 NVMe,"PET0; PER0; REFCLK; PERST#; CLKREQ#; WAKE#; 3V3; GND",bidirectional,"PCIe 2.1 / 3.3 V",BLOCKER,"PCB footprint/pad nets staged at 184.5,122.0 mm; repurpose the T527 PCIe/USB3 combo PHY and complete schematic, power, clock/control and impedance routing"
 SW1,FEL,"FEL strap to GND",input,SoC I/O,required,"Retain reference pull-up and debounce unless boot validation requires change"
 SW2,AP-RESET,"AP-RESET to GND",input,PMIC/SoC logic,required,"Retain reference reset network"
 SW3,Power,"PWRON/PEK",input,PMIC logic,required,"Retain AXP717 reference power-key behavior"

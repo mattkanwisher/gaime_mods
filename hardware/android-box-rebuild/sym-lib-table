@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "nvme")(type "KiCad")(uri "${KIPRJMOD}/libs/nvme.kicad_sym")(options "")(descr "Project-local M.2 connector symbols"))
+)

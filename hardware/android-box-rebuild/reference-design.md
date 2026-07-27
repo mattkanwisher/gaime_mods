@@ -29,10 +29,14 @@ a08d6b190b034455ce3941dad1c47cae812a917def3b7929a2ad29e24e98dac2  editable EasyE
 
 - Replace the barrel jack with a reviewed 9 V USB-C PD sink feeding the existing
   protected `DCIN-12V` input.
-- Keep horizontal HDMI Type-A in its reference connector corridor.
+- Keep the selected HCTL HDMI-01 horizontal Type-A on the reference connector edge;
+  its local route is staged and still requires enclosure and released-stack-up review.
 - Replace the dual USB-A with one USB 2.0 host Type-C receptacle in the same corridor.
 - Remove Ethernet, wireless, SD, camera, audio, panel-display and other unused carrier
-  interfaces only after a full net-consumer audit.
+  interfaces only after a full net-consumer audit. Both Ethernet PCB component groups
+  are now removed; their schematic sheets remain pending synchronization.
+- Repurpose the T527 PCIe/USB3 combo PHY for an M-key M.2 2230 NVMe socket, using the
+  Radxa Cubie A5E A527/T527-family implementation as an additional interface reference.
 
 The source is strongly reciprocal hardware. Preserve notices, modification records and
 the CERN-OHL-S-2.0 license when distributing manufacturing source or modified designs.
