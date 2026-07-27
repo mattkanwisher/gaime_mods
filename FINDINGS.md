@@ -1140,14 +1140,14 @@ thing. The UART is in any case the better access path for everything except writ
 ```
 $ adb devices
 List of devices attached
-90275779908287d1ed4     device
+<adb serial redacted>     device
 
 $ adb shell getprop ro.product.model
 A527 PRO
 ```
 
 The adb serial is derived from the chip SID captured over FEL much earlier
-(`0300ff10:90204824:75779908:287d1ed4`), so it is unmistakably this unit.
+(`<device SID redacted>`), so it is unmistakably this unit.
 
 ### What actually blocked it
 
@@ -1196,7 +1196,7 @@ Kernel, for the record: `Linux 5.15.119`, built `root@dashine-namco`, Fri Sep 12
 ## 16. Fastboot is reachable in software (but is the wrong tool for a one-byte fix)
 
 `adb reboot bootloader` lands in U-Boot's fastboot loop. The gadget appears as
-**`1f3a:1010` "sunxi"**, serial `90275779908287d1ed4` — the same serial adb reports, derived
+**`1f3a:1010` "sunxi"**, serial `<adb serial redacted>` — the same serial adb reports, derived
 from the chip SID. U-Boot has the full implementation: `Android Fastboot`,
 `fastboot - enter USB Fastboot protocol`, `reboot-fastboot`, `fastboot oem`, lock/unlock
 flags, and a `fastbootlogo.bmp` that is present in `bootloader_a`.

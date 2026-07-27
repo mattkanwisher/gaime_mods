@@ -1,5 +1,5 @@
 # G'AIM'E console — full flash backup
-# captured 2026-07-26T13:24:37Z via FES (read-only), device SID 0300ff10:90204824:75779908:287d1ed4
+# captured 2026-07-26T13:24:37Z via FES (read-only), device SID <device SID redacted>
 # device firmware: eng.root.20251009.032651, built Thu Oct 9 03:24:58 UTC 2025 (SKU: Premium/Ultimate)
 # NOTE: this is the FACTORY firmware, older than the public 4.0.3 download (built 2026-02-05).
 

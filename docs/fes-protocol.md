@@ -165,7 +165,7 @@ attempt costs a physical replug cycle.
 ```
 FEL mode      VID 0x1f3a  PID 0xefe8      (BROM FEL, not the vendor FES layer)
 SoC           0x1890 = A523 (sun55iw3)
-SID           0300ff10:90204824:75779908:287d1ed4
+SID           <device SID redacted>
 FEL version   ver=0001, scratchpad 0x00061500
 ```
 
