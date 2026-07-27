@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="nu.hyperworks.gaimeexplorer"
+    android:versionCode="1"
+    android:versionName="1.0">
+
+    <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="33" />
+
+    <!-- Read access to shared storage. Everything else it shows (/system,
+         /vendor, /proc) is world-readable and needs no permission. Deliberately
+         NOT declaring CATEGORY_HOME: hijacking the home intent would fight the
+         kiosk launcher and could leave the console with no usable UI. Launch it
+         with `am start` instead, or set it as home later from Settings. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <application
+        android:label="GAIME Explorer"
+        android:requestLegacyExternalStorage="true">
+        <activity
+            android:name=".ExplorerActivity"
+            android:exported="true"
+            android:label="GAIME Explorer"
+            android:theme="@android:style/Theme.Material.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
