@@ -13,7 +13,7 @@
 
 The project now contains the real Avaota hierarchy rather than placeholder blocks:
 
-- `android-box-rebuild.kicad_sch` plus 13 child sheets;
+- `android-box-rebuild.kicad_sch` plus 14 child sheets, including the new USB-C PD input;
 - `android-box-rebuild.kicad_pcb`, an eight-copper-layer routed PCB;
 - embedded imported symbols, footprints, nets, tracks, vias and zones.
 
@@ -64,7 +64,7 @@ changed.
 | Check | Result | Interpretation |
 |---|---:|---|
 | Schematic parse/ERC execution | Pass | All 14 sheets parse in KiCad 10 |
-| ERC findings | 4,226 | Mostly imported EasyEDA pin electrical types and missing KiCad power-driver semantics; must be audited, not blanket-excluded |
+| ERC findings | 4,265 | 607 errors and 3,658 warnings overall; the new PD sheet contributes 37 unspecified-pin compatibility warnings and no errors, while the inherited EasyEDA electrical-type backlog remains open |
 | PCB parse/position export | Pass | Component positions export successfully |
 | PCB 3D render | Pass | Board, copper and components load successfully |
 | PCB DRC execution | Pass | DRC completes when allowed macOS GUI-state access |
@@ -103,6 +103,22 @@ engagement and still require review against the selected receptacle drawings and
 fabricator rules. The unconnected count is expected
 at this stage: the new PD VBUS/CC nets, host VBUS/CC/USB2 nets, and other previously
 pruned subsystems must be reconciled with their matching schematic circuitry.
+
+## J5 connector-critical routing pass
+
+The staged J5 clone has been replaced by the exact XUNPU C720629 footprint without
+changing its edge datum. U1001 and U1002 fit between J5 and the retained D2/Q1 input
+stage; the two CC TVS parts and five connector/power capacitors are on B.Cu. CC1/CC2,
+both raw VBUS fingers, the 1.2 mm raw/protected inner-layer trunks, output capacitors,
+and the D2/Q1 handoff are connected. The remaining controller/eFuse control resistors,
+small regulator/timing capacitors, Q1001 and programming pads are still schematic-only.
+
+`scripts/check_j5_local.py` confirms the four critical connectivity groups and finds
+no different-net copper pair below 0.20 mm in the J5 corridor on F.Cu, In2.Cu,
+In4.Cu, In5.Cu or B.Cu. Position export and top/bottom 3D renders pass; board
+connectivity currently reports 125 inherited/staging unconnected edges. The KiCad CLI
+full-board DRC aborts in the current headless macOS process, so a GUI DRC run and
+comparison against the previous 2,783-finding import backlog remain mandatory.
 
 ## Ethernet connector prune
 
@@ -165,8 +181,9 @@ invalid-outline findings.
 4. Remove the GMAC0/1 schematic sheets and the eDP section of `6_PERF1` to match the
    completed PCB prunes, then remove camera and other unused carrier blocks one
    subsystem at a time.
-5. Replace the barrel connector with a reviewed 9 V USB-C PD sink feeding the existing
-   protected `DCIN-12V` path.
+5. Place and route the remaining J5 PD/eFuse control-passive network, review the
+   staged 9 V trunk against the released stack-up/current target, program and read back
+   the STUSB4500 NVM, then prove startup and fault behavior on the bench.
 6. Replace the dual USB-A with one USB 2.0 Type-C host and keep HDMI in its reference
    routing corridor after the mechanical outline and selected connector drawings are verified.
 7. Complete the staged M.2 design: disconnect/reassign the combo-PHY reference-clock

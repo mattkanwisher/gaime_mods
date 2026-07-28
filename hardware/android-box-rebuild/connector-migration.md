@@ -45,15 +45,20 @@ USB-C VBUS + CC1/CC2 -> autonomous PD sink requesting 9 V / 3 A
 - Do not connect raw default 5 V directly to `DCIN-12V` and hope the board starts.
   Enable the load path only after a valid 9 V contract.
 - Retain the existing TPS54531, inductor, output capacitors and downstream 5 V planes.
-- `STUSB4500QTR` (JLCPCB/LCSC `C2678061`) is the current Rev-P1 PD-controller
-  candidate because it supports standalone sink negotiation and configurable sink
-  PDOs. Program the Rev-P1 candidate for 9 V / 3 A. Its NVM configuration and external
-  power-path implementation still require a reviewed schematic and startup test.
+- `STUSB4500QTR` U1001 (JLCPCB/LCSC `C2678061`) is the selected standalone sink.
+  Program `SNK_PDO_NUMB=2`, PDO2 for 9 V / 3 A, and `POWER_ONLY_ABOVE_5V=1` before
+  bring-up. SCL, SDA, 2.7 V and GND programming pads are included.
+- `TPS259470LRPWR` U1002 (JLCPCB/LCSC `C3662793`) is the selected protected load
+  path. A 499 k/100 k UVLO divider enables near 7.19 V, an 806 k/100 k OVLO divider
+  trips near 10.87 V, and 1.00 k on ILM sets about 3.33 A nominal current limit.
+- `POWER_OK2` and Q1001 form a second enable condition: U1002 remains disabled until
+  the programmed PDO2 contract is active. Thus default 5 V is rejected by both the
+  PDO gate and UVLO, while 12/15/20 V are rejected by the PDO gate and OVLO.
 - The imported reverse-polarity MOSFET is only rated 15 V, so a 15 V contract is not
   acceptable without replacing that stage. Nine volts preserves useful margin and the
   existing TPS54531 can regulate the system 5 V rail from it.
-- Select the exact protection device and USB-C receptacle only after checking their
-  voltage/current ratings, startup state and JLCPCB assembly status.
+- J5 is the selected XUNPU `TYPEC-304-BCP16` / JLCPCB `C720629`. The CC TVS MPN is
+  provisionally `PESD24VL1BA`; assign its JLC/LCSC AVL entry before BOM freeze.
 
 ## USB-C host conversion
 
@@ -86,8 +91,9 @@ JLCPCB eight-layer stack-up is selected.
 1. Freeze the three shell centerlines and panel openings from the enclosure drawing.
 2. Validate the selected XUNPU `TYPEC-304-BCP16` USB-C and HCTL `HDMI-01` drawings
    against their footprints and the measured enclosure.
-3. Add the PD sink/protection block behind the staged J5 footprint and connect it
-   locally to the existing `DCIN-12V` entry.
+3. Complete the remaining U1001/U1002 control-passive fanout behind J5. The exact J5,
+   U1001/U1002, CC TVS and connector-critical `PD_VBUS_RAW`/`PD_9V_PROTECTED` routes
+   into the existing protected input corridor are already placed and connected.
 4. Add the CC, ESD and switched-VBUS circuitry behind staged J6, then reconnect
    `USB1-DP/DM` locally.
 5. Remove other unused edge connectors/peripherals one subsystem at a time. The
@@ -103,7 +109,14 @@ fanout track/via items, duplicated the imported TYPEC-304-BCP16 footprint as J5/
 renamed the edge silkscreen to POWER/HOST and refilled zones. The script now derives
 the J5/J6 Y datum by mirroring the original USB3 edge inset; the standalone
 `scripts/align_usbc_to_edge.py` applies the same correction to an already-staged board.
-It does not add a PD controller or claim the new nets are routed.
+The separate `scripts/add_usbc_pd_power.py` supplies the matching schematic hierarchy.
+`scripts/route_usbc_pd_power.py` replaces J5 with the exact C720629 footprint, places
+U1001/U1002 and the connector-critical capacitors/TVS parts, and routes both CC nets,
+the raw VBUS trunk, protected output and existing D2/Q1 handoff. The focused
+`scripts/check_j5_local.py` check confirms the expected critical pad connectivity and
+no copper pair below 0.20 mm on the five local layers it inspects. The control
+resistors, small regulator capacitors, Q1001 and programming pads remain to be placed
+and routed around inherited FPC1 copper.
 
 `scripts/replace_hdmi_horizontal.py` replaces the imported side-oriented HDMI with the
 exact HCTL `HDMI-01` footprint, preserves its net assignments, removes conflicting
@@ -114,5 +127,8 @@ release gates.
 
 - Verified manufacturer drawings and enclosure fit for the selected connectors.
 - Enclosure shell centerlines, panel openings, wall thickness and plug keepouts.
-- Exact 9 V USB PD sink/protection implementation and power-budget proof.
+- PCB placement/routing for the remaining PD/eFuse control-passive fanout and a
+  stack-up/current-density review of the routed 9 V trunks.
+- Frozen STUSB4500 NVM image, production programming method and read-back record.
+- CC TVS JLC/LCSC selection, power-budget proof and bench validation.
 - JLCPCB eight-layer stack-up and manufacturing rule normalization.

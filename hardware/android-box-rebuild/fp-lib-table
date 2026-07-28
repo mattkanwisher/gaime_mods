@@ -2,4 +2,5 @@
   (version 7)
   (lib (name "nvme")(type "KiCad")(uri "${KIPRJMOD}/libs/nvme.pretty")(options "")(descr "Project-local M.2 connector footprints"))
   (lib (name "hdmi")(type "KiCad")(uri "${KIPRJMOD}/libs/hdmi.pretty")(options "")(descr "JLCPCB C2906135 HCTL HDMI-01 production footprint"))
+  (lib (name "power")(type "KiCad")(uri "${KIPRJMOD}/libs/power.pretty")(options "")(descr "Project-local USB-C PD input footprints"))
 )

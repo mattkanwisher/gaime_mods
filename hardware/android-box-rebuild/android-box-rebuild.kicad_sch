@@ -5,6 +5,16 @@
 	(uuid "550d58f0-4e41-4062-aec4-b3409407efa1")
 	(paper "A4")
 	(lib_symbols)
+	(wire
+		(pts
+			(xy 17.78 104.775) (xy 45 104.775)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bfa86062-09fc-457c-968b-d36041d5faa0")
+	)
 	(sheet
 		(at 5.08 102.87)
 		(size 12.7 3.81)
@@ -41,6 +51,16 @@
 					(size 1.27 1.27)
 				)
 				(justify left top)
+			)
+		)
+		(pin "PD_9V_PROTECTED" input
+			(at 17.78 104.775 0)
+			(uuid "cf4db600-0b3c-4cf9-8f8b-2df17763d250")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 			)
 		)
 		(instances
@@ -599,6 +619,62 @@
 			(project "avaota-a1-v14"
 				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
 					(page "6")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 45 102.87)
+		(size 35.56 3.81)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "dc10ca32-d859-445f-91cb-6e652499906f")
+		(property "Sheetname" "USB-C PD 9V INPUT"
+			(at 45 102.1584 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "USB_C_PD_9V.kicad_sch"
+			(at 45 107.2646 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(pin "PD_9V_PROTECTED" output
+			(at 45 104.775 180)
+			(uuid "0b44e09c-6a75-4e7b-bd6c-f96dc6d8de76")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(instances
+			(project "avaota-a1-v14"
+				(path "/550d58f0-4e41-4062-aec4-b3409407efa1"
+					(page "15")
 				)
 			)
 		)

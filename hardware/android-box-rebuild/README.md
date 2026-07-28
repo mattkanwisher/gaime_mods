@@ -10,15 +10,19 @@ now fixed at the concept level and deliberately follows the reference connector 
 - all other external connectors are removed from the production baseline.
 
 This is **not fabrication-ready**, but it is now a real editable KiCad project. The
-pinned Avaota v1.4 EasyEDA source has been converted into a 14-sheet schematic and a
+pinned Avaota v1.4 EasyEDA source has been converted into a 15-page schematic and a
 routed eight-layer PCB. The PCB now contains the first same-edge placement pass: J5
 USB-C power and J6 USB-C host replace the barrel, dual USB-A and opposite-edge USB-C,
 and the imported vertical HDMI footprint has been replaced by the selected HCTL
 `HDMI-01` / JLCPCB `C2906135` horizontal right-angle Type-A receptacle. Both USB-C receptacle
 origins are aligned 3.9055 mm inboard of the bottom board edge, matching the insertion
 depth of the original USB3 receptacle; their modeled shell fronts overhang the edge by
-1.267 mm. Their new local nets remain intentionally unrouted until the PD/protection
-and USB host circuits are added to the schematic. Both Ethernet PHY component groups have now been removed from the
+1.267 mm. The J5 PD/protection circuit is implemented as a dedicated schematic sheet.
+The PCB now uses the exact C720629 J5 footprint, places U1001/U1002 in the original
+power corridor, and routes CC1/CC2, connector TVS protection, raw VBUS, the protected
+9 V path, and the D2/Q1 handoff. The remaining eFuse/control passives and programming
+pads are still schematic-only. J6 still needs
+its USB host power/CC circuit. Both Ethernet PHY component groups have now been removed from the
 PCB and the resulting area contains a staged M-key M.2 2230 NVMe connector and
 mounting hole. The external U15 eDP/DisplayPort panel connector, its protection and
 coupling parts, and its dedicated PCB routing have also been removed; HDMI is retained.
@@ -43,7 +47,7 @@ The conversion findings must also be cleared before release. See
 | Main PMIC | AXP717 | Reuse the Avaota A1 core power sheet and sequencing |
 | CPU PMIC | AXP323 | Reuse the Avaota A1 core power sheet and sequencing |
 | Video | HCTL HDMI-01 / JLCPCB C2906135, horizontal right-angle HDMI Type-A | Exact footprint and 3D model placed; TMDS/DDC/CEC/HPD/+5 V locally routed; verify enclosure and solve 100-ohm geometry against the released stack-up |
-| Power | Dedicated USB-C PD sink replacing the barrel jack | Negotiate 9 V / 3 A into the existing protected `DCIN-12V` path; no data on this connector |
+| Power | XUNPU C720629 + STUSB4500QTR C2678061 + TPS259470LRPWR C3662793 | 9 V / 3 A PDO2 into the existing protected input; default 5 V and inputs above about 10.9 V are hardware-blocked; program/verify U1001 NVM before assembly release |
 | Accessory port | One USB 2.0 host USB-C replacing the dual USB-A | Reuse one existing host pair; add Rp, ESD and a current-limited VBUS switch |
 | Debug | UART, JTAG, FEL and reset | Retain accessible pads or headers on prototypes |
 | Excluded | Ethernet, Wi-Fi, SD, camera, audio and panel display | Ethernet and external eDP PCB circuits removed; prune other unused circuits one subsystem at a time |
@@ -60,6 +64,7 @@ userspace. This is lower hardware risk than redesigning undocumented PMIC circui
 
 - [`android-box-rebuild.kicad_pro`](android-box-rebuild.kicad_pro) - open this file in KiCad to load the Rev-P1 project.
 - [`android-box-rebuild.kicad_sch`](android-box-rebuild.kicad_sch) - imported full Avaota schematic hierarchy.
+- [`USB_C_PD_9V.kicad_sch`](USB_C_PD_9V.kicad_sch) - J5, STUSB4500 and TPS259470L protected 9 V input circuit.
 - [`android-box-rebuild.kicad_pcb`](android-box-rebuild.kicad_pcb) - routed eight-layer Avaota PCB with the Rev-P1 connector placement staged; not the final routed layout.
 - [`scripts/stage_same_edge_connectors.py`](scripts/stage_same_edge_connectors.py) - reproducible KiCad Python transformation used for the connector placement pass.
 - [`scripts/align_usbc_to_edge.py`](scripts/align_usbc_to_edge.py) - derives the mirrored USB-C edge datum, aligns J5/J6 and removes conflicting abandoned local copper.
@@ -69,6 +74,9 @@ userspace. This is lower hardware risk than redesigning undocumented PMIC circui
 - [`scripts/remove_ethernet_connectors.py`](scripts/remove_ethernet_connectors.py) - reproducible removal of RJ1/RJ2, ETH0/ETH1 silkscreen and direct jack fanout.
 - [`scripts/stage_nvme_2230.py`](scripts/stage_nvme_2230.py) - reproducible GMAC PCB prune and M.2 2230 placement/net staging pass.
 - [`scripts/remove_edp_interface.py`](scripts/remove_edp_interface.py) - reproducible removal of U15 and the external eDP lane/AUX/HPD circuit and routing.
+- [`scripts/add_usbc_pd_power.py`](scripts/add_usbc_pd_power.py) - reproducibly generates the PD sheet, marks legacy DC1 DNP and connects the protected output through the root hierarchy.
+- [`scripts/route_usbc_pd_power.py`](scripts/route_usbc_pd_power.py) - places the exact J5/PD/eFuse front end and routes the connector-critical CC and 9 V power paths.
+- [`scripts/check_j5_local.py`](scripts/check_j5_local.py) - verifies critical J5 connectivity and 0.20 mm local copper clearance on the used outer/inner layers.
 - [`nvme-migration.md`](nvme-migration.md) - J7 pin map, placement, sources and remaining NVMe design blockers.
 - [`conversion-audit.md`](conversion-audit.md) - source provenance, import repairs, validation counts and conversion backlog.
 - [`connector-migration.md`](connector-migration.md) - current connector/net mapping and the controlled same-edge conversion sequence.
@@ -89,8 +97,9 @@ userspace. This is lower hardware risk than redesigning undocumented PMIC circui
    manufacturing constraints; keep a frozen hash of the original conversion.
 2. Freeze measured enclosure datums for the same-edge USB-C power, USB-C host and HDMI row.
 3. Remove unused external peripherals without changing core nets or power sequencing.
-4. Add the 9 V USB-C PD sink, adapt the single USB host protection, and implement the
-   M.2 3.3 V regulator/switch plus PCIe clock and control nets on the schematic.
+4. Finish the J5 eFuse/control passive fanout, adapt the single USB host protection,
+   and implement the M.2 3.3 V regulator/switch plus PCIe clock and control nets on
+   the schematic.
 5. Select exact SoC, DRAM, eMMC and PMIC MPNs, verify the selected connector drawings,
    and agree with JLCPCB how the fine-pitch BGAs and any consigned parts will be handled.
 6. Preserve the reference DRAM placement/escape and route the changed edge I/O and

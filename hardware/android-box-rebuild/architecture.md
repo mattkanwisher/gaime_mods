@@ -49,8 +49,12 @@ Rev-P1 keeps the Avaota carrier's TPS54531 input buck. The barrel jack is replac
 dedicated USB-C PD sink which requests 9 V / 3 A and feeds the existing
 reverse-protected `DCIN-12V` node. The rail name is inherited; its Rev-P1 operating
 voltage is 9 V. This minimizes power-plane and PMIC changes. A non-PD 5 V source must
-not be allowed to brown out the board; the PD controller/load path needs undervoltage
-gating so the input is enabled only after a valid 9 V contract.
+not be allowed to brown out the board. U1001 is an STUSB4500 programmed with 9 V / 3 A
+as PDO2; its active-low `POWER_OK2` output and Q1001 gate U1002, a TPS259470L eFuse.
+U1002 also has independent approximately 7.19 V UVLO and 10.87 V OVLO thresholds and
+a nominal 3.33 A current limit. The connector-critical CC and 9 V PCB path is routed;
+the control-passive fanout, NVM programming, stack-up/current-density review and bench
+proof remain release gates.
 
 The power connector has no USB data role. USB0 FEL/device is retained on internal
 prototype pads so recovery remains possible without complicating the external power

@@ -4312,6 +4312,29 @@
 		)
 		(uuid "ff41c3a6-ddca-4495-a3d8-0e7c04d1eb85")
 	)
+	(hierarchical_label "PD_9V_PROTECTED"
+		(shape input)
+		(at 59.69 57.15 180)
+		(effects
+			(font
+				(size 1 1)
+			)
+			(justify right)
+		)
+		(uuid "20b118ec-02e1-4da0-a4a6-de27cdc4e898")
+	)
+	(text "DC1 IS DNP: J5 USB-C PD feeds this node through the protected 9 V sheet"
+		(exclude_from_sim no)
+		(at 43.18 45.72 0)
+		(effects
+			(font
+				(size 1 1)
+				(bold yes)
+			)
+			(justify left)
+		)
+		(uuid "dfafb519-69e0-48af-a145-3b450fc17c7f")
+	)
 	(symbol
 		(lib_id "avaota-a1--easyedapro:CapAcitance")
 		(at 151.13 64.77 90)
@@ -6146,10 +6169,10 @@
 		(unit 1)
 		(body_style 0)
 		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
+		(in_bom no)
+		(on_board no)
+		(in_pos_files no)
+		(dnp yes)
 		(uuid "84e4be6e-2b4e-482b-96ee-a7283112ae9f")
 		(property "Reference" "DC1"
 			(at 45.72 53.34 0)
@@ -6162,7 +6185,7 @@
 				(justify left bottom)
 			)
 		)
-		(property "Value" "DC-044A-A200"
+		(property "Value" "DNP - USB-C PD REPLACES BARREL"
 			(at 45.72 67.31 0)
 			(show_name no)
 			(do_not_autoplace no)

@@ -54,6 +54,12 @@ Evidence / pass criteria:
 
 ## Gate 2 - schematic adaptation and power proof
 
+Status: the J5 power schematic uses STUSB4500QTR U1001 and TPS259470LRPWR U1002 with
+PDO2-qualified enable, approximately 7.19-10.87 V input window, 3.33 A nominal current
+limit and programming test pads. The exact J5/U1001/U1002 front end is placed and the
+CC/raw-VBUS/protected-VBUS paths are routed into D2/Q1. The control-passive PCB fanout,
+NVM image control, power-budget approval and bench evidence are still open.
+
 Work:
 
 1. Remove unused carrier peripherals one block at a time, auditing every disconnected
