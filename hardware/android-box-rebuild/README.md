@@ -24,8 +24,10 @@ power corridor, and routes CC1/CC2, connector TVS protection, raw VBUS, the prot
 pads are being routed incrementally: C1006, C1007 and R1012 now complete the U1002
 dV/dt, timer and nominal 3.33 A current-limit programming. R1008-R1011 now route the
 approximately 7.19 V UVLO and 10.87 V OVLO window. The PDO2-qualified Q1001 gate and
-U1001 support network remain schematic-only. J6 still needs
-its USB host power/CC circuit. Both Ethernet PHY component groups have now been removed from the
+U1001 support network remain schematic-only. J6 now has a matching USB-C host
+schematic: 56 kOhm Rp resistors advertise default current, while the design reuses
+the Avaota U17 SY6280AAC switched VBUS circuit and D13 USB2 ESD array. Its PCB
+placement and routing are the next local pass. Both Ethernet PHY component groups have now been removed from the
 PCB and the resulting area contains a staged M-key M.2 2230 NVMe connector and
 mounting hole. The external U15 eDP/DisplayPort panel connector, its protection and
 coupling parts, and its dedicated PCB routing have also been removed; HDMI is retained.
@@ -86,6 +88,7 @@ hide unfinished control logic:
 - [`android-box-rebuild.kicad_pro`](android-box-rebuild.kicad_pro) - open this file in KiCad to load the Rev-P1 project.
 - [`android-box-rebuild.kicad_sch`](android-box-rebuild.kicad_sch) - imported full Avaota schematic hierarchy.
 - [`USB_C_PD_9V.kicad_sch`](USB_C_PD_9V.kicad_sch) - J5, STUSB4500 and TPS259470L protected 9 V input circuit.
+- [`USB_C_HOST.kicad_sch`](USB_C_HOST.kicad_sch) - J6 Type-C host receptacle, default-current Rp and switched-VBUS handoff to the retained Avaota U17/D13 circuit.
 - [`android-box-rebuild.kicad_pcb`](android-box-rebuild.kicad_pcb) - routed eight-layer Avaota PCB with the Rev-P1 connector placement staged; not the final routed layout.
 - [`scripts/stage_same_edge_connectors.py`](scripts/stage_same_edge_connectors.py) - reproducible KiCad Python transformation used for the connector placement pass.
 - [`scripts/align_usbc_to_edge.py`](scripts/align_usbc_to_edge.py) - derives the mirrored USB-C edge datum, aligns J5/J6 and removes conflicting abandoned local copper.
@@ -97,6 +100,7 @@ hide unfinished control logic:
 - [`scripts/stage_nvme_2230.py`](scripts/stage_nvme_2230.py) - reproducible GMAC PCB prune and M.2 2230 placement/net staging pass.
 - [`scripts/remove_edp_interface.py`](scripts/remove_edp_interface.py) - reproducible removal of U15 and the external eDP lane/AUX/HPD circuit and routing.
 - [`scripts/add_usbc_pd_power.py`](scripts/add_usbc_pd_power.py) - reproducibly generates the PD sheet, marks legacy DC1 DNP and connects the protected output through the root hierarchy.
+- [`scripts/add_usbc_host.py`](scripts/add_usbc_host.py) - reproducibly generates the J6 host sheet, marks legacy USB2/USB3 connector symbols DNP and documents reuse of U17/D13.
 - [`scripts/route_usbc_pd_power.py`](scripts/route_usbc_pd_power.py) - places the exact J5/PD/eFuse front end and routes the connector-critical CC and 9 V power paths.
 - [`scripts/route_usbc_pd_efuse.py`](scripts/route_usbc_pd_efuse.py) - incrementally places and routes the U1002 dV/dt, timer and current-limit programming parts.
 - [`scripts/route_usbc_pd_window.py`](scripts/route_usbc_pd_window.py) - places and routes the U1002 UVLO/OVLO voltage-window dividers.
