@@ -112,11 +112,12 @@ stage; the two CC TVS parts and five connector/power capacitors are on B.Cu. CC1
 both raw VBUS fingers, the 1.2 mm raw/protected inner-layer trunks, output capacitors,
 and the D2/Q1 handoff are connected. C1006, C1007 and R1012 are now placed beside
 U1002 and route its dV/dt, fault-timer and nominal 3.33 A current-limit programming.
-The EN/OVLO dividers, Q1001 gate, U1001 support network and programming pads remain
+R1008-R1011 now route the approximately 7.19 V UVLO and 10.87 V OVLO window. The
+Q1001 PDO2-qualified gate, U1001 support network and programming pads remain
 schematic-only.
 
 `scripts/check_j5_local.py` confirms the four connector/power groups plus the three
-new eFuse analogue-programming groups and finds
+eFuse analogue-programming and voltage-window groups and finds
 no different-net copper pair below 0.20 mm in the J5 corridor on F.Cu, In2.Cu,
 In4.Cu, In5.Cu or B.Cu. Position export and top/bottom 3D renders pass; board
 connectivity currently reports 125 inherited/staging unconnected edges. Full-board

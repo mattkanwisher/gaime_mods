@@ -22,8 +22,9 @@ The PCB now uses the exact C720629 J5 footprint, places U1001/U1002 in the origi
 power corridor, and routes CC1/CC2, connector TVS protection, raw VBUS, the protected
 9 V path, and the D2/Q1 handoff. The remaining eFuse/control passives and programming
 pads are being routed incrementally: C1006, C1007 and R1012 now complete the U1002
-dV/dt, timer and nominal 3.33 A current-limit programming. The EN/OVLO dividers,
-PDO2-qualified gate and U1001 support network remain schematic-only. J6 still needs
+dV/dt, timer and nominal 3.33 A current-limit programming. R1008-R1011 now route the
+approximately 7.19 V UVLO and 10.87 V OVLO window. The PDO2-qualified Q1001 gate and
+U1001 support network remain schematic-only. J6 still needs
 its USB host power/CC circuit. Both Ethernet PHY component groups have now been removed from the
 PCB and the resulting area contains a staged M-key M.2 2230 NVMe connector and
 mounting hole. The external U15 eDP/DisplayPort panel connector, its protection and
@@ -90,6 +91,7 @@ hide unfinished control logic:
 - [`scripts/add_usbc_pd_power.py`](scripts/add_usbc_pd_power.py) - reproducibly generates the PD sheet, marks legacy DC1 DNP and connects the protected output through the root hierarchy.
 - [`scripts/route_usbc_pd_power.py`](scripts/route_usbc_pd_power.py) - places the exact J5/PD/eFuse front end and routes the connector-critical CC and 9 V power paths.
 - [`scripts/route_usbc_pd_efuse.py`](scripts/route_usbc_pd_efuse.py) - incrementally places and routes the U1002 dV/dt, timer and current-limit programming parts.
+- [`scripts/route_usbc_pd_window.py`](scripts/route_usbc_pd_window.py) - places and routes the U1002 UVLO/OVLO voltage-window dividers.
 - [`scripts/check_j5_local.py`](scripts/check_j5_local.py) - verifies critical J5 connectivity and 0.20 mm local copper clearance on the used outer/inner layers.
 - [`renders/pcb-top.png`](renders/pcb-top.png) and [`renders/pcb-bottom.png`](renders/pcb-bottom.png) - regenerated full-board 3D views after each routed milestone.
 - [`power-path.svg`](power-path.svg) - logical USB-C PD power/control state, updated when that design changes.

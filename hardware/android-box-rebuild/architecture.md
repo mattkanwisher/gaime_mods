@@ -53,7 +53,7 @@ not be allowed to brown out the board. U1001 is an STUSB4500 programmed with 9 V
 as PDO2; its active-low `POWER_OK2` output and Q1001 gate U1002, a TPS259470L eFuse.
 U1002 also has independent approximately 7.19 V UVLO and 10.87 V OVLO thresholds and
 a nominal 3.33 A current limit. The connector-critical CC and 9 V PCB path is routed;
-the U1002 dV/dt, timer and 3.33 A current-limit network is also routed. EN/OVLO,
+the U1002 dV/dt, timer, 3.33 A current-limit network and EN/OVLO window are also routed.
 PDO2-qualified enable, U1001 support/NVM programming, stack-up/current-density review
 and bench proof remain release gates.
 
