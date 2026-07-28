@@ -27,7 +27,10 @@ approximately 7.19 V UVLO and 10.87 V OVLO window. The PDO2-qualified Q1001 gate
 U1001 support network remain schematic-only. J6 now has a matching USB-C host
 schematic: 56 kOhm Rp resistors advertise default current, while the design reuses
 the Avaota U17 SY6280AAC switched VBUS circuit and D13 USB2 ESD array. Its PCB
-placement and routing are the next local pass. R1010/R1011 have been moved beside
+placement and routing are now implemented: R1103 hands the retained current-limited
+VBUS output to both connector power pins, R1101/R1102 drive CC1/CC2, and the reversible
+USB2 pins route through D13. The focused route check reports 0.649 mm D+/D- mismatch
+and no checked 0.20 mm local clearance violations. R1010/R1011 have been moved beside
 the HDMI support parts, preserving the eFuse OVLO threshold while freeing the J6
 reversible USB2 fanout corridor. Both Ethernet PHY component groups have now been removed from the
 PCB and the resulting area contains a staged M-key M.2 2230 NVMe connector and
@@ -60,7 +63,7 @@ C720629 footprint and 3D model.
 | CPU PMIC | AXP323 | Reuse the Avaota A1 core power sheet and sequencing |
 | Video | HCTL HDMI-01 / JLCPCB C2906135, horizontal right-angle HDMI Type-A | Exact footprint and 3D model placed; TMDS/DDC/CEC/HPD/+5 V locally routed; verify enclosure and solve 100-ohm geometry against the released stack-up |
 | Power | XUNPU C720629 + STUSB4500QTR C2678061 + TPS259470LRPWR C3662793 | 9 V / 3 A PDO2 into the existing protected input; default 5 V and inputs above about 10.9 V are hardware-blocked; program/verify U1001 NVM before assembly release |
-| Accessory port | One USB 2.0 host USB-C replacing the dual USB-A | Reuse one existing host pair; add Rp, ESD and a current-limited VBUS switch |
+| Accessory port | One USB 2.0 host USB-C replacing the dual USB-A | J6, 56 kOhm Rp, D13 ESD and retained U17 current-limited VBUS switch are placed and locally routed; validate with the final stack-up and whole-board DRC |
 | Debug | UART, JTAG, FEL and reset | Retain accessible pads or headers on prototypes |
 | Excluded | Ethernet, Wi-Fi, SD, camera, audio and panel display | Ethernet and external eDP PCB circuits removed; prune other unused circuits one subsystem at a time |
 
@@ -85,6 +88,8 @@ hide unfinished control logic:
 
 ![USB-C PD logical power path](power-path.svg)
 
+![J6 USB-C host logical path](usb-host-path.svg)
+
 ## Project files
 
 - [`android-box-rebuild.kicad_pro`](android-box-rebuild.kicad_pro) - open this file in KiCad to load the Rev-P1 project.
@@ -108,8 +113,11 @@ hide unfinished control logic:
 - [`scripts/route_usbc_pd_window.py`](scripts/route_usbc_pd_window.py) - places and routes the U1002 UVLO/OVLO voltage-window dividers.
 - [`scripts/relocate_j5_ovlo_for_j6.py`](scripts/relocate_j5_ovlo_for_j6.py) - moves the unchanged OVLO divider values out of the J6 high-speed fanout corridor and reconnects them to U1002.
 - [`scripts/check_j5_local.py`](scripts/check_j5_local.py) - verifies critical J5 connectivity and 0.20 mm local copper clearance on the used outer/inner layers.
+- [`scripts/route_usbc_host.py`](scripts/route_usbc_host.py) - places R1101-R1103 and reproducibly routes J6 switched VBUS, Rp/CC and reversible USB2 through the retained U17/D13 circuitry.
+- [`scripts/check_j6_local.py`](scripts/check_j6_local.py) - verifies J6/U17/D13 critical connectivity, USB2 length mismatch and focused 0.20 mm local copper clearance across all used copper layers.
 - [`renders/pcb-top.png`](renders/pcb-top.png), [`renders/pcb-bottom.png`](renders/pcb-bottom.png) and [`renders/pcb-ports.png`](renders/pcb-ports.png) - regenerated full-board and connector-edge 3D views after each routed milestone.
 - [`power-path.svg`](power-path.svg) - logical USB-C PD power/control state, updated when that design changes.
+- [`usb-host-path.svg`](usb-host-path.svg) - logical J6 switched-power, CC advertisement and USB2 data path.
 - [`nvme-migration.md`](nvme-migration.md) - J7 pin map, placement, sources and remaining NVMe design blockers.
 - [`conversion-audit.md`](conversion-audit.md) - source provenance, import repairs, validation counts and conversion backlog.
 - [`connector-migration.md`](connector-migration.md) - current connector/net mapping and the controlled same-edge conversion sequence.
@@ -130,8 +138,8 @@ hide unfinished control logic:
    manufacturing constraints; keep a frozen hash of the original conversion.
 2. Freeze measured enclosure datums for the same-edge USB-C power, USB-C host and HDMI row.
 3. Remove unused external peripherals without changing core nets or power sequencing.
-4. Finish the J5 eFuse/control passive fanout, adapt the single USB host protection,
-   and implement the M.2 3.3 V regulator/switch plus PCIe clock and control nets on
+4. Finish the J5 PDO2/control support network and implement the M.2 3.3 V
+   regulator/switch plus PCIe clock and control nets on
    the schematic.
 5. Select exact SoC, DRAM, eMMC and PMIC MPNs, verify the selected connector drawings,
    and agree with JLCPCB how the fine-pitch BGAs and any consigned parts will be handled.

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="560" viewBox="0 0 1400 560" role="img" aria-labelledby="title desc">
+  <title id="title">J6 USB-C host logical power and data path</title>
+  <desc id="desc">The retained five volt rail passes through U17 and R1103 to J6. Two 56 kiloohm pull-up resistors advertise default USB current. The USB 2 data pair passes through D13 ESD protection.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#305f8d"/>
+    </marker>
+    <style>
+      .title { font: 700 30px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #17324d; }
+      .subtitle { font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #546779; }
+      .box { fill: #f7fafc; stroke: #315f86; stroke-width: 2.5; rx: 14; }
+      .port { fill: #eef7f0; stroke: #34724a; stroke-width: 3; rx: 14; }
+      .label { font: 700 19px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #17324d; text-anchor: middle; }
+      .small { font: 15px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #42576a; text-anchor: middle; }
+      .wire { fill: none; stroke: #305f8d; stroke-width: 4; marker-end: url(#arrow); }
+      .data { fill: none; stroke: #6f45a5; stroke-width: 4; marker-end: url(#arrow); }
+      .control { fill: none; stroke: #bd6b13; stroke-width: 3; stroke-dasharray: 9 6; marker-end: url(#arrow); }
+      .note { font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #66788a; }
+    </style>
+  </defs>
+
+  <text x="55" y="55" class="title">J6 USB-C host path</text>
+  <text x="55" y="83" class="subtitle">Implemented PCB routing: protected 5 V, USB 2.0 data, reversible CC advertisement</text>
+
+  <rect x="55" y="145" width="160" height="95" class="box"/>
+  <text x="135" y="184" class="label">VBUS</text>
+  <text x="135" y="211" class="small">retained 5 V rail</text>
+
+  <rect x="305" y="130" width="235" height="125" class="box"/>
+  <text x="422" y="170" class="label">U17 · SY6280AAC</text>
+  <text x="422" y="198" class="small">current-limited switch</text>
+  <text x="422" y="224" class="small">R120 = 6.8 kΩ (~1 A)</text>
+
+  <rect x="640" y="145" width="180" height="95" class="box"/>
+  <text x="730" y="184" class="label">R1103 · 0 Ω</text>
+  <text x="730" y="211" class="small">VBUS handoff</text>
+
+  <rect x="1155" y="125" width="190" height="285" class="port"/>
+  <text x="1250" y="170" class="label">J6 · USB-C</text>
+  <text x="1250" y="198" class="small">USB 2.0 host</text>
+  <text x="1250" y="243" class="small">A4/B4 · VBUS</text>
+  <text x="1250" y="275" class="small">A5/B5 · CC1/CC2</text>
+  <text x="1250" y="307" class="small">A6/B6 · D+</text>
+  <text x="1250" y="339" class="small">A7/B7 · D−</text>
+  <text x="1250" y="371" class="small">shell · GND</text>
+
+  <path d="M215 192 H305" class="wire"/>
+  <path d="M540 192 H640" class="wire"/>
+  <path d="M820 192 H1155" class="wire"/>
+  <text x="585" y="177" class="note">VBUS-USB</text>
+  <text x="920" y="177" class="note">USB1_VBUS_SW</text>
+
+  <rect x="300" y="320" width="250" height="100" class="box"/>
+  <text x="425" y="356" class="label">SoC host control</text>
+  <text x="425" y="384" class="small">USB0-DRVVBUS → EN</text>
+  <path d="M425 320 V255" class="control"/>
+
+  <rect x="650" y="315" width="210" height="115" class="box"/>
+  <text x="755" y="352" class="label">R1101 / R1102</text>
+  <text x="755" y="381" class="small">56 kΩ Rp to VBUS</text>
+  <text x="755" y="407" class="small">default-current source</text>
+  <path d="M260 192 V280 H755 V315" class="wire"/>
+  <path d="M860 373 H1050 V275 H1155" class="wire"/>
+
+  <rect x="55" y="330" width="160" height="90" class="box"/>
+  <text x="135" y="367" class="label">USB1 D+/D−</text>
+  <text x="135" y="395" class="small">retained host pair</text>
+  <rect x="650" y="460" width="210" height="75" class="box"/>
+  <text x="755" y="493" class="label">D13 · RClamp0524</text>
+  <text x="755" y="518" class="small">USB 2.0 ESD array</text>
+  <path d="M215 375 H260 V497 H650" class="data"/>
+  <path d="M860 497 H1050 V323 H1155" class="data"/>
+
+  <text x="55" y="535" class="note">D+/D− routed mismatch: 0.649 mm · provisional until final stack-up and complete-board DRC</text>
+</svg>
