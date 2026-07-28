@@ -4,6 +4,7 @@
 ~*.lck
 _autosave-*
 *.kicad-bak
+__pycache__/
 
 # Temporary importer root created by KiCad
 /.kicad_sch
