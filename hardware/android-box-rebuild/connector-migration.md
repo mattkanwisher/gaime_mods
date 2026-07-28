@@ -94,6 +94,8 @@ JLCPCB eight-layer stack-up is selected.
 3. Complete the remaining U1001/U1002 control-passive fanout behind J5. The exact J5,
    U1001/U1002, CC TVS and connector-critical `PD_VBUS_RAW`/`PD_9V_PROTECTED` routes
    into the existing protected input corridor are already placed and connected.
+   U1002 dV/dt, timer and current-limit programming are also routed; EN/OVLO and the
+   PDO2-qualified enable gate are the next sub-step.
 4. Add the CC, ESD and switched-VBUS circuitry behind staged J6, then reconnect
    `USB1-DP/DM` locally.
 5. Remove other unused edge connectors/peripherals one subsystem at a time. The
@@ -114,9 +116,10 @@ The separate `scripts/add_usbc_pd_power.py` supplies the matching schematic hier
 U1001/U1002 and the connector-critical capacitors/TVS parts, and routes both CC nets,
 the raw VBUS trunk, protected output and existing D2/Q1 handoff. The focused
 `scripts/check_j5_local.py` check confirms the expected critical pad connectivity and
-no copper pair below 0.20 mm on the five local layers it inspects. The control
-resistors, small regulator capacitors, Q1001 and programming pads remain to be placed
-and routed around inherited FPC1 copper.
+no copper pair below 0.20 mm on the five local layers it inspects. The checker now also
+verifies U1002 pins 7, 9 and 10 through C1006, R1012 and C1007.
+The EN/OVLO resistors, U1001 support parts, Q1001 and programming pads remain to be
+placed and routed around inherited FPC1 copper.
 
 `scripts/replace_hdmi_horizontal.py` replaces the imported side-oriented HDMI with the
 exact HCTL `HDMI-01` footprint, preserves its net assignments, removes conflicting

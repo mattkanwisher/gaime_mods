@@ -10,7 +10,10 @@ import pcbnew
 
 
 MM = pcbnew.FromMM
-REGION = (100.0, 124.0, 120.5, 140.0)
+REGIONS = (
+    (100.0, 124.0, 120.5, 140.0),
+    (120.5, 128.8, 124.5, 140.0),
+)
 LAYERS = (pcbnew.F_Cu, pcbnew.In2_Cu, pcbnew.In4_Cu, pcbnew.In5_Cu, pcbnew.B_Cu)
 CRITICAL = {
     ("J5", "A5"): {("J5", "A5"), ("U1001", "1"), ("U1001", "2"), ("D1001", "1")},
@@ -22,6 +25,9 @@ CRITICAL = {
     ("U1002", "6"): {
         ("U1002", "6"), ("C1008", "1"), ("C1009", "1"), ("D2", "2"), ("Q1", "3"),
     },
+    ("U1002", "7"): {("U1002", "7"), ("C1006", "1")},
+    ("U1002", "9"): {("U1002", "9"), ("R1012", "1")},
+    ("U1002", "10"): {("U1002", "10"), ("C1007", "1")},
 }
 
 
@@ -31,10 +37,12 @@ def mm(value: int) -> float:
 
 def in_region(item: pcbnew.BOARD_ITEM) -> bool:
     box = item.GetBoundingBox()
-    x1, y1, x2, y2 = REGION
-    return not (
-        mm(box.GetRight()) < x1 or mm(box.GetLeft()) > x2
-        or mm(box.GetBottom()) < y1 or mm(box.GetTop()) > y2
+    return any(
+        not (
+            mm(box.GetRight()) < x1 or mm(box.GetLeft()) > x2
+            or mm(box.GetBottom()) < y1 or mm(box.GetTop()) > y2
+        )
+        for x1, y1, x2, y2 in REGIONS
     )
 
 

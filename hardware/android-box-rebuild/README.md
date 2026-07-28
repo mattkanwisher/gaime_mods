@@ -21,7 +21,9 @@ depth of the original USB3 receptacle; their modeled shell fronts overhang the e
 The PCB now uses the exact C720629 J5 footprint, places U1001/U1002 in the original
 power corridor, and routes CC1/CC2, connector TVS protection, raw VBUS, the protected
 9 V path, and the D2/Q1 handoff. The remaining eFuse/control passives and programming
-pads are still schematic-only. J6 still needs
+pads are being routed incrementally: C1006, C1007 and R1012 now complete the U1002
+dV/dt, timer and nominal 3.33 A current-limit programming. The EN/OVLO dividers,
+PDO2-qualified gate and U1001 support network remain schematic-only. J6 still needs
 its USB host power/CC circuit. Both Ethernet PHY component groups have now been removed from the
 PCB and the resulting area contains a staged M-key M.2 2230 NVMe connector and
 mounting hole. The external U15 eDP/DisplayPort panel connector, its protection and
@@ -60,7 +62,18 @@ unchanged**. The practical sequence is to boot an Avaota-supported Android/Linux
 first, then port the G'AIM'E bootloader/device-tree power configuration and Android
 userspace. This is lower hardware risk than redesigning undocumented PMIC circuits.
 
-## Files
+## Current board views
+
+![PCB top view](renders/pcb-top.png)
+
+![PCB bottom view](renders/pcb-bottom.png)
+
+The routing-state logical view is tracked separately so physical layout changes do not
+hide unfinished control logic:
+
+![USB-C PD logical power path](power-path.svg)
+
+## Project files
 
 - [`android-box-rebuild.kicad_pro`](android-box-rebuild.kicad_pro) - open this file in KiCad to load the Rev-P1 project.
 - [`android-box-rebuild.kicad_sch`](android-box-rebuild.kicad_sch) - imported full Avaota schematic hierarchy.
@@ -76,7 +89,10 @@ userspace. This is lower hardware risk than redesigning undocumented PMIC circui
 - [`scripts/remove_edp_interface.py`](scripts/remove_edp_interface.py) - reproducible removal of U15 and the external eDP lane/AUX/HPD circuit and routing.
 - [`scripts/add_usbc_pd_power.py`](scripts/add_usbc_pd_power.py) - reproducibly generates the PD sheet, marks legacy DC1 DNP and connects the protected output through the root hierarchy.
 - [`scripts/route_usbc_pd_power.py`](scripts/route_usbc_pd_power.py) - places the exact J5/PD/eFuse front end and routes the connector-critical CC and 9 V power paths.
+- [`scripts/route_usbc_pd_efuse.py`](scripts/route_usbc_pd_efuse.py) - incrementally places and routes the U1002 dV/dt, timer and current-limit programming parts.
 - [`scripts/check_j5_local.py`](scripts/check_j5_local.py) - verifies critical J5 connectivity and 0.20 mm local copper clearance on the used outer/inner layers.
+- [`renders/pcb-top.png`](renders/pcb-top.png) and [`renders/pcb-bottom.png`](renders/pcb-bottom.png) - regenerated full-board 3D views after each routed milestone.
+- [`power-path.svg`](power-path.svg) - logical USB-C PD power/control state, updated when that design changes.
 - [`nvme-migration.md`](nvme-migration.md) - J7 pin map, placement, sources and remaining NVMe design blockers.
 - [`conversion-audit.md`](conversion-audit.md) - source provenance, import repairs, validation counts and conversion backlog.
 - [`connector-migration.md`](connector-migration.md) - current connector/net mapping and the controlled same-edge conversion sequence.
