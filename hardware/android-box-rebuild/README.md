@@ -39,6 +39,11 @@ The conversion findings must also be cleared before release. See
 [`conversion-audit.md`](conversion-audit.md) and
 [`jlcpcb-release-plan.md`](jlcpcb-release-plan.md).
 
+The HDMI connector retains the imported electrical reference `USB1` so the converted
+schematic hierarchy remains synchronized. Its board-facing silkscreen label is `HDMI`;
+the inherited `USB1` reference is hidden. J5 and J6 both use the same project-local
+C720629 footprint and 3D model.
+
 ## Rev-P1 baseline
 
 | Item | Baseline | Release decision |
@@ -69,6 +74,8 @@ userspace. This is lower hardware risk than redesigning undocumented PMIC circui
 
 ![PCB bottom view](renders/pcb-bottom.png)
 
+![Connector-edge side view](renders/pcb-ports.png)
+
 The routing-state logical view is tracked separately so physical layout changes do not
 hide unfinished control logic:
 
@@ -82,6 +89,7 @@ hide unfinished control logic:
 - [`android-box-rebuild.kicad_pcb`](android-box-rebuild.kicad_pcb) - routed eight-layer Avaota PCB with the Rev-P1 connector placement staged; not the final routed layout.
 - [`scripts/stage_same_edge_connectors.py`](scripts/stage_same_edge_connectors.py) - reproducible KiCad Python transformation used for the connector placement pass.
 - [`scripts/align_usbc_to_edge.py`](scripts/align_usbc_to_edge.py) - derives the mirrored USB-C edge datum, aligns J5/J6 and removes conflicting abandoned local copper.
+- [`scripts/finalize_connector_presentation.py`](scripts/finalize_connector_presentation.py) - hides the inherited `USB1` HDMI reference and gives J6 the same local C720629 footprint/model as J5.
 - [`scripts/replace_hdmi_horizontal.py`](scripts/replace_hdmi_horizontal.py) - places the exact HCTL HDMI-01 footprint, preserves the 19 signal nets and grounded shell, and clears its local reroute corridor.
 - [`scripts/route_hdmi_local.py`](scripts/route_hdmi_local.py) - reproducibly reconnects the four TMDS pairs and HDMI control/power nets to the preserved Avaota corridor.
 - [`datasheets/HCTL-HDMI-01_C2906135.pdf`](datasheets/HCTL-HDMI-01_C2906135.pdf) - selected connector mechanical drawing.
@@ -93,7 +101,7 @@ hide unfinished control logic:
 - [`scripts/route_usbc_pd_efuse.py`](scripts/route_usbc_pd_efuse.py) - incrementally places and routes the U1002 dV/dt, timer and current-limit programming parts.
 - [`scripts/route_usbc_pd_window.py`](scripts/route_usbc_pd_window.py) - places and routes the U1002 UVLO/OVLO voltage-window dividers.
 - [`scripts/check_j5_local.py`](scripts/check_j5_local.py) - verifies critical J5 connectivity and 0.20 mm local copper clearance on the used outer/inner layers.
-- [`renders/pcb-top.png`](renders/pcb-top.png) and [`renders/pcb-bottom.png`](renders/pcb-bottom.png) - regenerated full-board 3D views after each routed milestone.
+- [`renders/pcb-top.png`](renders/pcb-top.png), [`renders/pcb-bottom.png`](renders/pcb-bottom.png) and [`renders/pcb-ports.png`](renders/pcb-ports.png) - regenerated full-board and connector-edge 3D views after each routed milestone.
 - [`power-path.svg`](power-path.svg) - logical USB-C PD power/control state, updated when that design changes.
 - [`nvme-migration.md`](nvme-migration.md) - J7 pin map, placement, sources and remaining NVMe design blockers.
 - [`conversion-audit.md`](conversion-audit.md) - source provenance, import repairs, validation counts and conversion backlog.
