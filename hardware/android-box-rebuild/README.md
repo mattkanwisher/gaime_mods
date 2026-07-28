@@ -27,7 +27,9 @@ approximately 7.19 V UVLO and 10.87 V OVLO window. The PDO2-qualified Q1001 gate
 U1001 support network remain schematic-only. J6 now has a matching USB-C host
 schematic: 56 kOhm Rp resistors advertise default current, while the design reuses
 the Avaota U17 SY6280AAC switched VBUS circuit and D13 USB2 ESD array. Its PCB
-placement and routing are the next local pass. Both Ethernet PHY component groups have now been removed from the
+placement and routing are the next local pass. R1010/R1011 have been moved beside
+the HDMI support parts, preserving the eFuse OVLO threshold while freeing the J6
+reversible USB2 fanout corridor. Both Ethernet PHY component groups have now been removed from the
 PCB and the resulting area contains a staged M-key M.2 2230 NVMe connector and
 mounting hole. The external U15 eDP/DisplayPort panel connector, its protection and
 coupling parts, and its dedicated PCB routing have also been removed; HDMI is retained.
@@ -104,6 +106,7 @@ hide unfinished control logic:
 - [`scripts/route_usbc_pd_power.py`](scripts/route_usbc_pd_power.py) - places the exact J5/PD/eFuse front end and routes the connector-critical CC and 9 V power paths.
 - [`scripts/route_usbc_pd_efuse.py`](scripts/route_usbc_pd_efuse.py) - incrementally places and routes the U1002 dV/dt, timer and current-limit programming parts.
 - [`scripts/route_usbc_pd_window.py`](scripts/route_usbc_pd_window.py) - places and routes the U1002 UVLO/OVLO voltage-window dividers.
+- [`scripts/relocate_j5_ovlo_for_j6.py`](scripts/relocate_j5_ovlo_for_j6.py) - moves the unchanged OVLO divider values out of the J6 high-speed fanout corridor and reconnects them to U1002.
 - [`scripts/check_j5_local.py`](scripts/check_j5_local.py) - verifies critical J5 connectivity and 0.20 mm local copper clearance on the used outer/inner layers.
 - [`renders/pcb-top.png`](renders/pcb-top.png), [`renders/pcb-bottom.png`](renders/pcb-bottom.png) and [`renders/pcb-ports.png`](renders/pcb-ports.png) - regenerated full-board and connector-edge 3D views after each routed milestone.
 - [`power-path.svg`](power-path.svg) - logical USB-C PD power/control state, updated when that design changes.
