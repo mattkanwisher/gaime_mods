@@ -1,0 +1,4 @@
+#!/bin/sh
+# Launch gun with the frame tap preloaded. Install as /app/bin/gun,
+# with the original binary moved to /app/bin/gun.real.
+exec env LD_PRELOAD=/app/frame_tap.so /app/bin/gun.real "$@"
