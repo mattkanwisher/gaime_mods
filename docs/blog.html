@@ -105,7 +105,7 @@ footer.end a{color:var(--accent)}
   AES key, no secure boot of any kind, a licensed Namco arcade emulator, and a gun that
   is secretly a Linux computer with its own camera and 128 MiB of flash. Here is
   everything we found, including the bits we got wrong.</p>
-  <p class="meta">2026-07-27 · built from commit <code>637c81b</code> ·
+  <p class="meta">2026-07-28 · built from commit <code>93b0aaf</code> ·
   <a href="https://github.com/mattkanwisher/gaime_mods">github.com/mattkanwisher/gaime_mods</a></p>
 </header>
 
@@ -127,6 +127,7 @@ in the chain, so once you understand the image you can also put things back.</p>
   <ol>
     <li>The console: a hardcoded key, a homemade flasher, and a root shell</li>
     <li>The gun: an absolute-positioning light gun that already works on any PC</li>
+    <li>What replacement compute boards cost at JLCPCB</li>
     <li>What's still open</li>
   </ol>
 </div>
@@ -716,7 +717,87 @@ gun's own firmware first, which means getting that UART working.</p>
 
 <hr>
 
-<h2><span class="num">15</span>What's still open</h2>
+<h2><span class="num">15</span>What replacement compute boards cost</h2>
+
+<p>I also priced two open-source application-processor boards as possible starting points
+for a replacement console: the Allwinner-based
+<a href="https://github.com/AvaotaSBC/Avaota-A1">Avaota A1</a>, configured as the
+intended 1 GB option, and the much faster Rockchip RK3576-based
+<a href="https://oshwhub.com/li-chuang-kai-fa-ban/project_gzzvrwqn">TaishanPi 3M</a>.
+These figures were captured from JLCPCB on 28 July 2026, in US dollars, before shipping
+and tax.</p>
+
+<div class="tablewrap">
+<table>
+  <thead>
+    <tr>
+      <th>Board and quantity</th>
+      <th>PCB</th>
+      <th>Assembly + selected parts</th>
+      <th>Total</th>
+      <th>Per board</th>
+      <th>Price type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Avaota A1-derived, 5</td>
+      <td>$107.40</td>
+      <td>$389.45</td>
+      <td><strong>$496.85</strong></td>
+      <td>$99.37</td>
+      <td>Live quote</td>
+    </tr>
+    <tr>
+      <td>TaishanPi 3M RK3576, 5</td>
+      <td>$196.67</td>
+      <td>$582.56</td>
+      <td><strong>$779.23</strong></td>
+      <td>$155.85</td>
+      <td>Live quote</td>
+    </tr>
+    <tr>
+      <td>Avaota A1-derived, 100</td>
+      <td colspan="2">Not yet requoted at volume</td>
+      <td><strong>$9,937.00</strong></td>
+      <td>$99.37</td>
+      <td>5-board rate extrapolated to 100</td>
+    </tr>
+    <tr>
+      <td>TaishanPi 3M RK3576, 100</td>
+      <td>$366.38</td>
+      <td>$11,651.20</td>
+      <td><strong>$12,017.58</strong></td>
+      <td>$120.18</td>
+      <td>Live PCB quote + conservative PCBA extrapolation</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<p>At five boards, the TaishanPi quote is <strong>$282.38 more in total</strong>, or
+<strong>56.8% more</strong> than the Avaota quote: a $56.48 difference per board. At 100,
+the current planning figures put it $2,080.58 (20.9%) above the Avaota extrapolation. That
+second percentage is only directional: JLCPCB returned an actual 100-board PCB price for
+the TaishanPi, while its 100-board assembly quote and the Avaota volume re-quote were not
+completed. The TaishanPi assembly figure therefore carries the
+five-board PCBA rate forward, while its PCB line includes the real volume discount.</p>
+
+<div class="callout warn">
+<span class="label">These are incomplete-scope estimates, not prices for 100 working computers</span>
+<p>The TaishanPi five-board upload matched its RK3576 processor, but omitted the LPDDR5,
+eMMC and one protection device; 14 more lines were short of stock. Its 100-board match had
+16 shortage lines and the same five unmatched lines. The Avaota cart likewise contained
+only 48 selected part lines and left functional parts, including its power-management IC,
+unselected. The numbers above compare fabrication and the currently selected BOM scope.
+RAM, storage, substitutions, shipping, tax and JLCPCB engineering changes will raise the
+price of complete, bootable boards. A purchase decision needs fresh 100-board quotes after
+every functional BOM line is matched.</p>
+</div>
+
+<hr>
+
+<h2><span class="num">16</span>What's still open</h2>
 
 <p><strong>The gun's SoC is unidentified.</strong> Everything downstream — its firmware, the
 CV pipeline, whether the camera can be put into imaging mode — waits on soldering three
